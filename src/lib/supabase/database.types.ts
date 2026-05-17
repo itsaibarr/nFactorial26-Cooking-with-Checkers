@@ -112,6 +112,8 @@ export type Database = {
       profiles: {
         Row: {
           accessibility_mode: boolean
+          board_theme: string
+          capture_input_mode: string
           created_at: string
           current_sharpness: number
           display_name: string | null
@@ -120,6 +122,8 @@ export type Database = {
           language: string
           last_activity_date: string | null
           level: string
+          show_legal_moves: boolean
+          show_recommended_moves: boolean
           streak_days: number
           streak_freezes_remaining: number
           stripe_customer_id: string | null
@@ -130,6 +134,8 @@ export type Database = {
         }
         Insert: {
           accessibility_mode?: boolean
+          board_theme?: string
+          capture_input_mode?: string
           created_at?: string
           current_sharpness?: number
           display_name?: string | null
@@ -138,6 +144,8 @@ export type Database = {
           language?: string
           last_activity_date?: string | null
           level?: string
+          show_legal_moves?: boolean
+          show_recommended_moves?: boolean
           streak_days?: number
           streak_freezes_remaining?: number
           stripe_customer_id?: string | null
@@ -148,6 +156,8 @@ export type Database = {
         }
         Update: {
           accessibility_mode?: boolean
+          board_theme?: string
+          capture_input_mode?: string
           created_at?: string
           current_sharpness?: number
           display_name?: string | null
@@ -156,6 +166,8 @@ export type Database = {
           language?: string
           last_activity_date?: string | null
           level?: string
+          show_legal_moves?: boolean
+          show_recommended_moves?: boolean
           streak_days?: number
           streak_freezes_remaining?: number
           stripe_customer_id?: string | null
@@ -308,7 +320,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reserve_rate_limit_slot: {
+        Args: {
+          p_action: string
+          p_limit: number
+          p_user_id: string
+          p_window_start: string
+        }
+        Returns: {
+          allowed: boolean
+          new_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
