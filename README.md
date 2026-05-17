@@ -3,7 +3,7 @@
 AI-coached Russian draughts for sharper minds.
 
 Live: https://sharpki.online  
-nFactorial Incubator '26, Checkers task. Built solo in 7 days by Aibar.
+nFactorial Incubator '26, Checkers task. 
 
 ---
 
