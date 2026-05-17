@@ -2,6 +2,8 @@
   "dashboard": {
     "settings": "Settings",
     "signOut": "Sign out",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian",
     "profileDescription": "Your training dashboard.",
     "sharpnessLabel": "Sharpness Score",
     "playWithBot": "Play vs bot",
@@ -68,6 +70,8 @@
   "landing": {
     "brand": "Sharpki",
     "quoteNav": "Quote",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian",
     "heroTitle1": "Checkers with an AI coach.",
     "heroTitle2": "For a sharp mind.",
     "heroDescription": "Play a game against the bot, get a warm breakdown of each mistake from the AI coach. Cognitive workout for adults 45+, 10 minutes a day.",
@@ -82,6 +86,8 @@
     "description": "The paid tier removes limits on AI reviews and keeps your daily training going without interruptions.",
     "backToDashboard": "← Dashboard",
     "backToHome": "← Home",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian",
     "canceledNotice": "Checkout was closed before payment. You can come back to plan selection any time.",
     "alreadyActiveTitle": "Subscription is already active",
     "alreadyActiveStatus": "Current status: {status}.",
@@ -97,6 +103,8 @@
   "play": {
     "title": "New game",
     "description": "The Russian checkers engine is wired in. Pick your color and bot strength, then start a real game.",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian",
     "errorInvalid": "Pick your color and bot level again.",
     "errorCreate": "Could not create the game. Try again.",
     "colorTitle": "Your color",
@@ -119,6 +127,8 @@
     "title": "Settings",
     "description": "Account, subscription status, and quick actions.",
     "backToDashboard": "← Dashboard",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian",
     "portalReturned": "Page updated after returning from Stripe Portal.",
     "profileTitle": "Your Sharpki profile.",
     "subscriptionTitle": "Subscription",
@@ -156,6 +166,8 @@
     "title": "Game history",
     "description": "Last 50 completed games",
     "back": "← Back",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian",
     "empty": "No completed games yet.",
     "startFirst": "Start your first game",
     "gamesTitle": "Games",
@@ -184,6 +196,8 @@
     "monthlyCta": "Start Pro Monthly",
     "yearlyCta": "Start Pro Yearly",
     "backToDashboard": "← Dashboard",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian",
     "dailyTask": "Daily puzzle",
     "findBestMove": "Find the best move for {side}",
     "whiteSide": "white",
@@ -203,11 +217,15 @@
   },
   "gameSession": {
     "title": "Game session",
-    "description": "The engine runs locally in the interface, and the finished game is saved through server-side move validation."
+    "description": "The engine runs locally in the interface, and the finished game is saved through server-side move validation.",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian"
   },
   "analysis": {
     "title": "Game review",
-    "description": "This page reuses a cached review when available and requests a fresh one on first open."
+    "description": "This page reuses a cached review when available and requests a fresh one on first open.",
+    "langToggle": "RU",
+    "langToggleAria": "Switch to Russian"
   },
   "gameControls": {
     "you": "You: {color}",

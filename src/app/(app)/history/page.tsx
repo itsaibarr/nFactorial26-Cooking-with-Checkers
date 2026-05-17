@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -74,9 +75,12 @@ export default async function HistoryPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{t("history.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("history.description")}</p>
         </div>
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/dashboard">{t("history.back")}</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <LanguageToggle locale={locale} label={t("history.langToggle")} ariaLabel={t("history.langToggleAria")} />
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/dashboard">{t("history.back")}</Link>
+          </Button>
+        </div>
       </header>
 
       {!games || games.length === 0 ? (

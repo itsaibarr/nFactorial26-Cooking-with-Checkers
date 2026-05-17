@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { DashboardActivityHeatmap } from "@/components/common/DashboardActivityHeatmap"
 import { DashboardUpgradeToast } from "@/components/common/DashboardUpgradeToast"
 import { DashboardAnalytics } from "@/components/common/DashboardAnalytics"
+import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { PortalManageButton } from "@/components/common/PortalManageButton"
 import { SharpnessGauge } from "@/components/common/SharpnessGauge"
 import { SignOutButton } from "@/components/common/SignOutButton"
@@ -166,6 +167,7 @@ export default async function DashboardPage() {
           </Button>
           {renderStreakBadge(profile?.streak_days ?? 0, locale)}
           <SignOutButton label={t("dashboard.signOut")} />
+          <LanguageToggle locale={locale} label={t("dashboard.langToggle")} ariaLabel={t("dashboard.langToggleAria")} />
         </div>
       </header>
 

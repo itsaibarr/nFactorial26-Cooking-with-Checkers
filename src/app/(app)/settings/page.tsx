@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { GamePreferencesForm } from "@/components/game/GamePreferencesForm"
+import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -101,9 +102,12 @@ export default async function SettingsPage({
             {t("settings.description")}
           </p>
         </div>
-        <Button asChild variant="ghost">
-          <Link href="/dashboard">{t("settings.backToDashboard")}</Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <LanguageToggle locale={locale} label={t("settings.langToggle")} ariaLabel={t("settings.langToggleAria")} />
+          <Button asChild variant="ghost">
+            <Link href="/dashboard">{t("settings.backToDashboard")}</Link>
+          </Button>
+        </div>
       </header>
 
       {portal === "returned" ? (

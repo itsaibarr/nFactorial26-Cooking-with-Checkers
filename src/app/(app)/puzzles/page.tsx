@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { PricingCheckoutButton } from "@/components/common/PricingCheckoutButton"
 import { Button } from "@/components/ui/button"
 import {
@@ -85,6 +86,12 @@ export default async function PuzzlesPage() {
 
   return (
     <main className="mx-auto flex min-h-svh max-w-lg flex-col justify-center gap-6 px-6 py-12">
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/dashboard">{t("puzzles.backToDashboard")}</Link>
+        </Button>
+        <LanguageToggle locale={cookieLocale} label={t("puzzles.langToggle")} ariaLabel={t("puzzles.langToggleAria")} />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>
@@ -116,10 +123,6 @@ export default async function PuzzlesPage() {
               </PricingCheckoutButton>
             </div>
           ) : null}
-
-          <Button asChild variant="ghost">
-            <Link href="/dashboard">{t("puzzles.backToDashboard")}</Link>
-          </Button>
         </CardContent>
       </Card>
     </main>

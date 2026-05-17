@@ -92,10 +92,10 @@ export default async function QuotePage() {
             </p>
             <p>
               <RichText
-                text={t("quote.p2", { school: "Zerda Late International School", prize: "2,200,000" })}
+                text={t("quote.p2", { school: "Zerdeli School", prize: "200,000" })}
                 highlights={[
-                  { text: "Zerda Late International School", className: "font-medium" },
-                  { text: "2,200,000", className: "font-semibold text-primary" },
+                  { text: "Zerdeli School", className: "font-medium" },
+                  { text: "200,000", className: "font-semibold text-primary" },
                 ]}
               />
             </p>

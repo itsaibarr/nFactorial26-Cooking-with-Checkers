@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { PricingAnalytics } from "@/components/common/PricingAnalytics"
 import { PricingCheckoutButton } from "@/components/common/PricingCheckoutButton"
 import { PortalManageButton } from "@/components/common/PortalManageButton"
@@ -58,9 +59,12 @@ export default async function PricingPage({
               {t("pricing.description")}
             </p>
           </div>
-          <Button asChild variant="ghost">
-            <Link href={user ? "/dashboard" : "/"}>{user ? t("pricing.backToDashboard") : t("pricing.backToHome")}</Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <LanguageToggle locale={locale} label={t("pricing.langToggle")} ariaLabel={t("pricing.langToggleAria")} />
+            <Button asChild variant="ghost">
+              <Link href={user ? "/dashboard" : "/"}>{user ? t("pricing.backToDashboard") : t("pricing.backToHome")}</Link>
+            </Button>
+          </div>
         </div>
 
         {canceled === "true" ? (

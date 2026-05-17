@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { z } from "zod"
+import { LanguageToggle } from "@/components/common/LanguageToggle"
 import {
   Card,
   CardContent,
@@ -71,11 +72,14 @@ export default async function PlayLobbyPage({
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{t("play.title")}</h1>
-        <p className="max-w-2xl text-muted-foreground">
-          {t("play.description")}
-        </p>
+      <header className="flex items-center justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">{t("play.title")}</h1>
+          <p className="max-w-2xl text-muted-foreground">
+            {t("play.description")}
+          </p>
+        </div>
+        <LanguageToggle locale={locale} label={t("play.langToggle")} ariaLabel={t("play.langToggleAria")} />
       </header>
 
       {errorCopy ? (

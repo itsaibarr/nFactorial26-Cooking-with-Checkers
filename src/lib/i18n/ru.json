@@ -2,6 +2,8 @@
   "dashboard": {
     "settings": "Настройки",
     "signOut": "Выйти",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский",
     "profileDescription": "Ваш тренировочный кабинет.",
     "sharpnessLabel": "Sharpness Score",
     "playWithBot": "Играть с ботом",
@@ -68,6 +70,8 @@
   "landing": {
     "brand": "Sharpki",
     "quoteNav": "Цитата",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский",
     "heroTitle1": "Шашки с тренером-ИИ.",
     "heroTitle2": "Для острого ума.",
     "heroDescription": "Сыграйте партию против бота, получите тёплый разбор каждой ошибки от ИИ-тренера. Когнитивная зарядка для взрослых 45+, по 10 минут в день.",
@@ -82,6 +86,8 @@
     "description": "Платный тариф снимает лимиты на AI-разборы и делает ежедневную тренировку непрерывной.",
     "backToDashboard": "← В кабинет",
     "backToHome": "← На главную",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский",
     "canceledNotice": "Checkout был закрыт до оплаты. Можно вернуться к выбору плана в любой момент.",
     "alreadyActiveTitle": "Подписка уже активна",
     "alreadyActiveStatus": "Текущий статус: {status}.",
@@ -97,6 +103,8 @@
   "play": {
     "title": "Новая партия",
     "description": "Движок русских шашек уже подключён к приложению. Выберите цвет и силу бота, затем начните реальную партию.",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский",
     "errorInvalid": "Выберите цвет и уровень бота заново.",
     "errorCreate": "Не удалось создать партию. Попробуйте ещё раз.",
     "colorTitle": "Ваш цвет",
@@ -119,6 +127,8 @@
     "title": "Настройки",
     "description": "Аккаунт, статус подписки и быстрые действия.",
     "backToDashboard": "← В кабинет",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский",
     "portalReturned": "Страница обновлена после возврата из Stripe Portal.",
     "profileTitle": "Ваш профиль Sharpki.",
     "subscriptionTitle": "Подписка",
@@ -156,6 +166,8 @@
     "title": "История партий",
     "description": "Последние 50 завершённых партий",
     "back": "← Назад",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский",
     "empty": "Пока нет завершённых партий.",
     "startFirst": "Начать первую игру",
     "gamesTitle": "Партии",
@@ -184,6 +196,8 @@
     "monthlyCta": "Оформить Pro Monthly",
     "yearlyCta": "Взять Pro Yearly",
     "backToDashboard": "← В кабинет",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский",
     "dailyTask": "Ежедневное задание",
     "findBestMove": "Найдите лучший ход для {side}",
     "whiteSide": "белых",
@@ -203,11 +217,15 @@
   },
   "gameSession": {
     "title": "Игровая сессия",
-    "description": "Движок работает локально в интерфейсе, а завершённая партия сохраняется через серверную валидацию ходов."
+    "description": "Движок работает локально в интерфейсе, а завершённая партия сохраняется через серверную валидацию ходов.",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский"
   },
   "analysis": {
     "title": "Разбор партии",
-    "description": "Страница использует сохранённый разбор, а при первом открытии запросит новый у AI Coach."
+    "description": "Страница использует сохранённый разбор, а при первом открытии запросит новый у AI Coach.",
+    "langToggle": "EN",
+    "langToggleAria": "Переключить на английский"
   },
   "gameControls": {
     "you": "Вы: {color}",

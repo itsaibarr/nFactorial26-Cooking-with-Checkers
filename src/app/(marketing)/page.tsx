@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LandingPageAnalytics } from "@/components/common/LandingPageAnalytics";
+import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { SignInButton } from "@/components/common/SignInButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createClient } from "@/lib/supabase/server";
@@ -37,6 +38,7 @@ export default async function LandingPage({
           >
             {t("landing.quoteNav")}
           </Link>
+          <LanguageToggle locale={locale} label={t("landing.langToggle")} ariaLabel={t("landing.langToggleAria")} />
         </nav>
       </header>
 

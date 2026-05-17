@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { z } from "zod"
 import { CoachAnalysisClient } from "@/components/coach/CoachAnalysisClient"
+import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { isCoachAnalysisFresh } from "@/lib/coach/cache"
 import {
   coachAnalysisSchema,
@@ -106,13 +107,16 @@ export default async function AnalysisPage({
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          {t("analysis.title")}
-        </h1>
-        <p className="text-muted-foreground">
-          {t("analysis.description")}
-        </p>
+      <header className="flex items-center justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {t("analysis.title")}
+          </h1>
+          <p className="text-muted-foreground">
+            {t("analysis.description")}
+          </p>
+        </div>
+        <LanguageToggle locale={cookieLocale} label={t("analysis.langToggle")} ariaLabel={t("analysis.langToggleAria")} />
       </header>
 
       <CoachAnalysisClient
