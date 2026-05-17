@@ -2,7 +2,6 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { PuzzleSolveClient } from "@/components/puzzle/PuzzleSolveClient"
 import { StreakBadge } from "@/components/common/StreakBadge"
-import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { Button } from "@/components/ui/button"
 import {
   DEFAULT_GAMEPLAY_PREFERENCES,
@@ -111,10 +110,7 @@ export default async function PuzzlePage({params}: PageProps) {
         <Button asChild variant="ghost" size="sm">
           <Link href="/dashboard">{t("puzzles.backToDashboard")}</Link>
         </Button>
-        <div className="flex items-center gap-2">
-          <StreakBadge days={profile?.streak_days ?? 0} />
-          <LanguageToggle locale={cookieLocale} label={t("puzzles.langToggle")} ariaLabel={t("puzzles.langToggleAria")} />
-        </div>
+        <StreakBadge days={profile?.streak_days ?? 0} />
       </header>
 
       <Card>

@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation"
 import { z } from "zod"
 import { GameSession } from "@/components/game/GameSession"
-import { LanguageToggle } from "@/components/common/LanguageToggle"
 import {
   DEFAULT_GAMEPLAY_PREFERENCES,
   mapStoredGameplayPreferences,
@@ -92,14 +91,11 @@ export default async function PlayGamePage({
 
   return (
     <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-6 px-6 py-12">
-      <header className="flex items-center justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">{t("gameSession.title")}</h1>
-          <p className="text-muted-foreground">
-            {t("gameSession.description")}
-          </p>
-        </div>
-        <LanguageToggle locale={cookieLocale} label={t("gameSession.langToggle")} ariaLabel={t("gameSession.langToggleAria")} />
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">{t("gameSession.title")}</h1>
+        <p className="text-muted-foreground">
+          {t("gameSession.description")}
+        </p>
       </header>
 
       <GameSession
