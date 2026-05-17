@@ -22,6 +22,7 @@ const storedProfileSchema = z.object({
 const storedAnalysisSchema = z.object({
   payload: coachAnalysisSchema,
   created_at: z.string(),
+  model: z.string().min(1),
 })
 
 export default async function AnalysisPage({
@@ -76,14 +77,16 @@ export default async function AnalysisPage({
 
   const {data: rawAnalysis} = await supabase
     .from("game_analyses")
-    .select("payload, created_at")
+    .select("payload, created_at, model")
     .eq("game_id", parsedGame.data.id)
     .eq("language", requestedLanguage)
     .maybeSingle()
 
   const parsedAnalysis = storedAnalysisSchema.safeParse(rawAnalysis)
   const initialAnalysis =
-    parsedAnalysis.success && isCoachAnalysisFresh(parsedAnalysis.data.created_at)
+    parsedAnalysis.success &&
+    parsedAnalysis.data.model !== "engine-only-fallback" &&
+    isCoachAnalysisFresh(parsedAnalysis.data.created_at)
       ? parsedAnalysis.data.payload
       : null
 

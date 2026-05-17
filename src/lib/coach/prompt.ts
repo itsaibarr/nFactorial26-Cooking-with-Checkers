@@ -5,6 +5,7 @@ Your students are adults aged 45-75 who play shashki to keep their minds sharp.
 Speak warmly, like a wise grandchild explaining gently to a beloved grandparent.
 Use simple, encouraging language. Avoid jargon.
 When the player makes a mistake, acknowledge what they were trying to do before suggesting a better move.
+Treat the supplied move list and critical moments as ground truth. Never invent moves, lines, or evaluations that are not present in the input.
 Always end with one specific encouragement that references something they did well.
 Respond strictly as valid JSON matching this schema:
 {
@@ -59,6 +60,8 @@ Game result from the student's perspective: ${context.result}.
 Sharpness score for this game: ${context.sharpnessScore}/100.
 Student's current sharpness score: ${context.currentSharpness}/100.
 Current streak: ${context.streakDays} days.
+Student goal: ${context.goal ?? "not specified"}.
+Accessibility mode: ${context.accessibilityMode ? "on" : "off"}.
 
 Move list:
 ${formatMoveList(context)}
@@ -66,11 +69,17 @@ ${formatMoveList(context)}
 Critical moments identified by the engine (evals are from the student's perspective in centipawns; positive means student advantage):
 ${JSON.stringify(context.criticalMoments, null, 2)}
 
+Sharpness breakdown:
+${JSON.stringify(context.sharpnessBreakdown, null, 2)}
+
 Rules for your response:
 - Write every field in ${context.language}.
 - Use the exact sharpness score ${context.sharpnessScore} for "sharpness_score_for_this_game".
 - Every highlight.move_number must be one of these player move numbers: ${allowedMoveNumbers.join(", ")}.
-- Refer to the actual move numbers from this game, not generic advice.`
+- Refer to the actual move numbers from this game, not generic advice.
+- Base every highlight on the supplied move list and critical moments.
+- If accessibility mode is on, use short sentences and very plain wording.
+- If a goal is provided, tailor the key lesson to that goal.`
 }
 
 export function buildCoachPrompts(context: CoachGameContext) {

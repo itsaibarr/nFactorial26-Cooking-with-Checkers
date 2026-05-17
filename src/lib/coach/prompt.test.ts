@@ -12,6 +12,17 @@ const baseContext: CoachGameContext = {
   sharpnessScore: 78,
   currentSharpness: 64,
   streakDays: 3,
+  goal: "memory",
+  accessibilityMode: true,
+  sharpnessBreakdown: {
+    accuracy: 78,
+    speed: 64,
+    blunderRate: 82,
+    topThreeMatches: 1,
+    playerMoves: 1,
+    blunders: 0,
+    averageMoveTimeMs: 1200,
+  },
   moves: [
     {notation: "c3-b4", durationMs: 1200, side: "white"},
     {notation: "f6-g5", durationMs: null, side: "black"},
@@ -48,6 +59,9 @@ describe("buildCoachPrompts", () => {
 
     expect(userPrompt).toContain("Requested language: en")
     expect(userPrompt).toContain("Sharpness score for this game: 84/100.")
+    expect(userPrompt).toContain("Student goal: memory.")
+    expect(userPrompt).toContain("Accessibility mode: on.")
+    expect(userPrompt).toContain('"blunderRate": 82')
     expect(userPrompt).toContain('"move_number": 1')
   })
 })

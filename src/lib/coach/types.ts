@@ -13,6 +13,14 @@ export const coachOverallQualitySchema = z.enum([
 ])
 export type CoachOverallQuality = z.infer<typeof coachOverallQualitySchema>
 
+export const coachAnalysisFailureReasonSchema = z.enum([
+  "timeout",
+  "parse",
+  "auth",
+  "unknown",
+])
+export type CoachAnalysisFailureReason = z.infer<typeof coachAnalysisFailureReasonSchema>
+
 export const coachHighlightTypeSchema = z.enum([
   "best_move",
   "good_idea",
@@ -49,6 +57,16 @@ export const criticalMomentSchema = z.object({
 })
 export type CriticalMoment = z.infer<typeof criticalMomentSchema>
 
+export interface CoachSharpnessBreakdown {
+  readonly accuracy: number
+  readonly speed: number
+  readonly blunderRate: number
+  readonly topThreeMatches: number
+  readonly playerMoves: number
+  readonly blunders: number
+  readonly averageMoveTimeMs: number | null
+}
+
 export interface CoachGameContext {
   readonly gameId: string
   readonly language: CoachLanguage
@@ -59,6 +77,9 @@ export interface CoachGameContext {
   readonly sharpnessScore: number
   readonly currentSharpness: number
   readonly streakDays: number
+  readonly goal: string | null
+  readonly accessibilityMode: boolean
+  readonly sharpnessBreakdown: CoachSharpnessBreakdown
   readonly moves: readonly RecordedMove[]
   readonly criticalMoments: readonly CriticalMoment[]
 }
@@ -69,4 +90,6 @@ export interface CoachAnalysisResult {
   readonly tokensIn: number | null
   readonly tokensOut: number | null
   readonly costUsd: number | null
+  readonly degraded: boolean
+  readonly failureReason: CoachAnalysisFailureReason | null
 }
