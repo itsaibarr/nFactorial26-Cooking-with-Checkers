@@ -32,7 +32,7 @@ A phase that "almost passes" is a failed phase. Fix it before moving on.
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | Foundation | not started |
+| 1 | Foundation | in progress |
 | 2 | Engine | not started |
 | 3 | Gameplay loop | not started |
 | 4 | AI Coach | not started |
@@ -89,9 +89,11 @@ A phase that "almost passes" is a failed phase. Fix it before moving on.
 
 **Backlog**:
 <!-- adjacent work spotted during this phase — do NOT act on it now -->
+- Next.js 16 warns that `middleware.ts` should migrate to `proxy.ts`; keep the auth middleware stable for now and revisit after Foundation closes.
 
 **Revisions**:
 <!-- if you return to this phase later, record what changed and why -->
+- 2026-05-17: Re-opened Foundation after `.env.local` was filled. Re-ran build/typecheck/schema verification, wired PostHog `/ingest` rewrites for the active `instrumentation-client.ts`, and kept the phase open until live OAuth + RLS smoke tests are completed.
 
 ---
 

@@ -407,14 +407,14 @@ These layer on top of the universal behavioral guidelines above.
 
 ## Current build phase
 
-**Phase 0 — Pre-flight (not started). Phase 1 begins after this.**
+**Phase 1 — Foundation (in progress). Automated checks are green; live OAuth + RLS smoke tests still need to run before moving to Phase 2.**
 
 Execute against `docs/07_PHASES.md`. The work is sliced into **8 sequential phases, one trackable goal per phase**, verified by both an automated check and a manual smoke test. Do not start phase N+1 until phase N's Definition of Done passes.
 
 | # | Phase | Status |
 |---|---|---|
-| 0 | Pre-flight (accounts + secrets) | **not started** |
-| 1 | Foundation (scaffold + DB + auth) | not started |
+| 0 | Pre-flight (accounts + secrets) | partial |
+| 1 | Foundation (scaffold + DB + auth) | **in progress** |
 | 2 | Engine | not started |
 | 3 | Gameplay loop | not started |
 | 4 | AI Coach | not started |
