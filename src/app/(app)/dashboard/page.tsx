@@ -1,3 +1,4 @@
+import { DashboardAnalytics } from "@/components/common/DashboardAnalytics";
 import { SignOutButton } from "@/components/common/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,6 +18,8 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
+      <DashboardAnalytics />
+
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Sharpki</h1>
         <SignOutButton />
