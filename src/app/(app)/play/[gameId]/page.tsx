@@ -10,6 +10,7 @@ import { recordedMoveListSchema, replayRecordedGame } from "@/lib/game/session"
 import { sharpnessBreakdownSchema } from "@/lib/sharpness/compute"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
+import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
 
 const storedGameSchema = z.object({
   id: z.string().uuid(),
@@ -74,6 +75,8 @@ export default async function PlayGamePage({
   }
 
   const language = profile?.language === "en" ? "en" : "ru"
+  const cookieLocale = await resolveLocaleFromCookie()
+  const {t} = getAppTranslator(cookieLocale)
   const subscriptionTier =
     profile?.subscription_tier === "pro" || profile?.subscription_tier === "family"
       ? profile.subscription_tier
@@ -88,10 +91,9 @@ export default async function PlayGamePage({
   return (
     <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-6 px-6 py-12">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Игровая сессия</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("gameSession.title")}</h1>
         <p className="text-muted-foreground">
-          Движок работает локально в интерфейсе, а завершённая партия сохраняется
-          через серверную валидацию ходов.
+          {t("gameSession.description")}
         </p>
       </header>
 

@@ -19,32 +19,33 @@ import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/server"
 import type { CreateGameStateOptions, PieceColor } from "@/lib/engine/types"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
+import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
 
 interface PageProps {
   params: Promise<{puzzleId: string}>
 }
 
-function difficultyLabel(n: number): string {
+function difficultyLabel(n: number, t: ReturnType<typeof getAppTranslator>["t"]): string {
   const labels: Record<number, string> = {
-    1: "Начинающий",
-    2: "Средний",
-    3: "Сложный",
-    4: "Продвинутый",
-    5: "Мастер",
+    1: t("puzzles.difficulty1"),
+    2: t("puzzles.difficulty2"),
+    3: t("puzzles.difficulty3"),
+    4: t("puzzles.difficulty4"),
+    5: t("puzzles.difficulty5"),
   }
   return labels[n] ?? String(n)
 }
 
-function themeLabel(theme: string | null): string {
+function themeLabel(theme: string | null, t: ReturnType<typeof getAppTranslator>["t"]): string {
   const labels: Record<string, string> = {
-    basic_capture: "Взятие",
-    double_capture: "Двойное взятие",
-    triple_capture: "Тройное взятие",
-    backward_capture: "Взятие назад",
-    promotion: "Превращение",
-    king_capture: "Взятие дамкой",
+    basic_capture: t("puzzles.themeBasicCapture"),
+    double_capture: t("puzzles.themeDoubleCapture"),
+    triple_capture: t("puzzles.themeTripleCapture"),
+    backward_capture: t("puzzles.themeBackwardCapture"),
+    promotion: t("puzzles.themePromotion"),
+    king_capture: t("puzzles.themeKingCapture"),
   }
-  return theme ? (labels[theme] ?? theme) : "Тактика"
+  return theme ? (labels[theme] ?? theme) : t("puzzles.themeDefault")
 }
 
 export default async function PuzzlePage({params}: PageProps) {
@@ -99,12 +100,14 @@ export default async function PuzzlePage({params}: PageProps) {
   const gameplayPreferences = parsedGameplayPreferences.success
     ? mapStoredGameplayPreferences(parsedGameplayPreferences.data)
     : DEFAULT_GAMEPLAY_PREFERENCES
+  const cookieLocale = await resolveLocaleFromCookie()
+  const {t} = getAppTranslator(cookieLocale)
 
   return (
     <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-6 px-6 py-12">
       <header className="flex items-center justify-between">
         <Button asChild variant="ghost" size="sm">
-          <Link href="/dashboard">← Назад</Link>
+          <Link href="/dashboard">{t("puzzles.backToDashboard")}</Link>
         </Button>
         <StreakBadge days={profile?.streak_days ?? 0} />
       </header>
@@ -113,16 +116,15 @@ export default async function PuzzlePage({params}: PageProps) {
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle>Ежедневное задание</CardTitle>
+              <CardTitle>{t("puzzles.dailyTask")}</CardTitle>
               <CardDescription className="mt-1">
-                Найдите лучший ход для{" "}
-                {puzzle.side_to_move === "white" ? "белых" : "чёрных"}
+                {t("puzzles.findBestMove", { side: puzzle.side_to_move === "white" ? t("puzzles.whiteSide") : t("puzzles.blackSide") })}
               </CardDescription>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <Badge variant="outline">{difficultyLabel(puzzle.difficulty)}</Badge>
+              <Badge variant="outline">{difficultyLabel(puzzle.difficulty, t)}</Badge>
               <Badge variant="secondary" className="text-xs">
-                {themeLabel(puzzle.theme)}
+                {themeLabel(puzzle.theme, t)}
               </Badge>
             </div>
           </div>

@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { createClient } from "@/lib/supabase/server";
+import { resolveLocaleFromCookie } from "@/lib/i18n";
 
 export default async function AppLayout({
   children,
@@ -12,5 +14,14 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  return <>{children}</>;
+  const locale = await resolveLocaleFromCookie();
+
+  return (
+    <>
+      <div className="fixed top-3 right-4 z-50">
+        <LanguageToggle locale={locale} />
+      </div>
+      {children}
+    </>
+  );
 }

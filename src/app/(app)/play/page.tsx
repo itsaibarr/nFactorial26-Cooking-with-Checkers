@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card"
 import { StartGameSubmitButton } from "@/components/game/StartGameSubmitButton"
 import { createClient } from "@/lib/supabase/server"
+import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
 
 const startGameSchema = z.object({
   playerColor: z.enum(["white", "black"]),
@@ -53,33 +54,26 @@ async function startGameAction(formData: FormData) {
   redirect(`/play/${game.id}`)
 }
 
-function getErrorCopy(error: string | undefined) {
-  if (error === "invalid") {
-    return "Выберите цвет и уровень бота заново."
-  }
-
-  if (error === "create") {
-    return "Не удалось создать партию. Попробуйте ещё раз."
-  }
-
-  return null
-}
-
 export default async function PlayLobbyPage({
   searchParams,
 }: {
   searchParams: Promise<{error?: string}>
 }) {
   const {error} = await searchParams
-  const errorCopy = getErrorCopy(error)
+  const locale = await resolveLocaleFromCookie()
+  const {t} = getAppTranslator(locale)
+
+  const errorCopy =
+    error === "invalid" ? t("play.errorInvalid") :
+    error === "create" ? t("play.errorCreate") :
+    null
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Новая партия</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("play.title")}</h1>
         <p className="max-w-2xl text-muted-foreground">
-          Движок русских шашек уже подключён к приложению. Выберите цвет и силу
-          бота, затем начните реальную партию.
+          {t("play.description")}
         </p>
       </header>
 
@@ -92,22 +86,21 @@ export default async function PlayLobbyPage({
       <form action={startGameAction} className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Ваш цвет</CardTitle>
+            <CardTitle>{t("play.colorTitle")}</CardTitle>
             <CardDescription>
-              Белые ходят первыми. Чёрными вы сразу проверите ответ бота из
-              стартовой позиции.
+              {t("play.colorDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <ColorOption
-              title="Белые"
-              description="Вы начинаете партию."
+              title={t("play.white")}
+              description={t("play.whiteDescription")}
               value="white"
               defaultChecked
             />
             <ColorOption
-              title="Чёрные"
-              description="Бот сделает первый ход."
+              title={t("play.black")}
+              description={t("play.blackDescription")}
               value="black"
             />
           </CardContent>
@@ -115,30 +108,30 @@ export default async function PlayLobbyPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Сила бота</CardTitle>
+            <CardTitle>{t("play.levelTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <LevelOption
-              title="Лёгкий"
-              description="Делает случайные ходы. Подходит для первой партии."
+              title={t("play.easy")}
+              description={t("play.easyDescription")}
               value="easy"
               defaultChecked
             />
             <LevelOption
-              title="Средний"
-              description="Думает на несколько ходов вперёд."
+              title={t("play.medium")}
+              description={t("play.mediumDescription")}
               value="medium"
             />
             <LevelOption
-              title="Сильный"
-              description="Считает глубже и ошибается редко."
+              title={t("play.hard")}
+              description={t("play.hardDescription")}
               value="hard"
             />
           </CardContent>
         </Card>
 
         <div className="md:col-span-2">
-          <StartGameSubmitButton />
+          <StartGameSubmitButton locale={locale} />
         </div>
       </form>
     </main>

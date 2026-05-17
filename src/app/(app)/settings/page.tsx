@@ -18,6 +18,7 @@ import {
 } from "@/lib/game/preferences"
 import { getPlanFromPriceId } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
+import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
 
 function formatPlanLabel(priceId: string | null) {
   if (!priceId) {
@@ -38,12 +39,12 @@ function formatPlanLabel(priceId: string | null) {
   }
 }
 
-function formatDate(dateValue: string | null) {
+function formatDate(dateValue: string | null, locale: string) {
   if (!dateValue) {
     return "—"
   }
 
-  return new Date(dateValue).toLocaleDateString("ru-RU", {
+  return new Date(dateValue).toLocaleDateString(locale === "en" ? "en-US" : "ru-RU", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -64,6 +65,9 @@ export default async function SettingsPage({
   if (!user) {
     return null
   }
+
+  const locale = await resolveLocaleFromCookie()
+  const {t} = getAppTranslator(locale)
 
   const [{data: profile}, {data: subscriptions}] = await Promise.all([
     supabase
@@ -91,20 +95,20 @@ export default async function SettingsPage({
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
       <header className="flex items-center justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Настройки</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("settings.title")}</h1>
           <p className="text-muted-foreground">
-            Аккаунт, статус подписки и быстрые действия.
+            {t("settings.description")}
           </p>
         </div>
         <Button asChild variant="ghost">
-          <Link href="/dashboard">← В кабинет</Link>
+          <Link href="/dashboard">{t("settings.backToDashboard")}</Link>
         </Button>
       </header>
 
       {portal === "returned" ? (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="py-4 text-sm">
-            Страница обновлена после возврата из Stripe Portal.
+            {t("settings.portalReturned")}
           </CardContent>
         </Card>
       ) : null}
@@ -112,7 +116,7 @@ export default async function SettingsPage({
       <Card>
         <CardHeader>
           <CardTitle>{profile?.display_name ?? user.email}</CardTitle>
-          <CardDescription>Ваш профиль Sharpki.</CardDescription>
+          <CardDescription>{t("settings.profileTitle")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <Badge variant="outline">Email: {user.email ?? "—"}</Badge>
@@ -123,31 +127,31 @@ export default async function SettingsPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Подписка</CardTitle>
+          <CardTitle>{t("settings.subscriptionTitle")}</CardTitle>
           <CardDescription>
-            Управление тарифом и оплатой.
+            {t("settings.subscriptionDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border p-4">
-              <p className="text-sm text-muted-foreground">Текущий план</p>
+              <p className="text-sm text-muted-foreground">{t("settings.currentPlan")}</p>
               <p className="mt-1 font-medium">{formatPlanLabel(subscription?.price_id ?? null)}</p>
             </div>
             <div className="rounded-xl border p-4">
-              <p className="text-sm text-muted-foreground">Статус</p>
+              <p className="text-sm text-muted-foreground">{t("settings.status")}</p>
               <p className="mt-1 font-medium">{subscription?.status ?? profile?.subscription_status ?? "inactive"}</p>
             </div>
             <div className="rounded-xl border p-4">
-              <p className="text-sm text-muted-foreground">Следующая дата</p>
+              <p className="text-sm text-muted-foreground">{t("settings.nextDate")}</p>
               <p className="mt-1 font-medium">
-                {formatDate(subscription?.current_period_end ?? null)}
+                {formatDate(subscription?.current_period_end ?? null, locale)}
               </p>
             </div>
             <div className="rounded-xl border p-4">
-              <p className="text-sm text-muted-foreground">Отмена в конце периода</p>
+              <p className="text-sm text-muted-foreground">{t("settings.cancelAtEnd")}</p>
               <p className="mt-1 font-medium">
-                {subscription?.cancel_at_period_end ? "Да" : "Нет"}
+                {subscription?.cancel_at_period_end ? t("settings.yes") : t("settings.no")}
               </p>
             </div>
           </div>
@@ -157,15 +161,15 @@ export default async function SettingsPage({
               <PortalManageButton />
             ) : (
               <Button asChild>
-                <Link href="/pricing">Открыть тарифы</Link>
+                <Link href="/pricing">{t("settings.openPricing")}</Link>
               </Button>
             )}
-            <SignOutButton />
+            <SignOutButton label={t("settings.signOut")} />
           </div>
         </CardContent>
       </Card>
 
-      <GamePreferencesForm initialPreferences={gameplayPreferences} />
+      <GamePreferencesForm initialPreferences={gameplayPreferences} locale={locale} />
     </main>
   )
 }

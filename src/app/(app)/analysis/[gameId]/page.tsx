@@ -8,6 +8,7 @@ import {
 } from "@/lib/coach/types"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
+import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
 
 const storedGameSchema = z.object({
   id: z.string().uuid(),
@@ -84,6 +85,9 @@ export default async function AnalysisPage({
   const monthlyCheckoutEnabled = isStripePlanConfigured("monthly")
   const yearlyCheckoutEnabled = isStripePlanConfigured("yearly")
 
+  const cookieLocale = await resolveLocaleFromCookie()
+  const {t} = getAppTranslator(cookieLocale)
+
   const {data: rawAnalysis} = await supabase
     .from("game_analyses")
     .select("payload, created_at, model")
@@ -103,12 +107,10 @@ export default async function AnalysisPage({
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 px-6 py-12">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">
-          {requestedLanguage === "ru" ? "Разбор партии" : "Game review"}
+          {t("analysis.title")}
         </h1>
         <p className="text-muted-foreground">
-          {requestedLanguage === "ru"
-            ? "Страница использует сохранённый разбор, а при первом открытии запросит новый у AI Coach."
-            : "This page reuses a cached review when available and requests a fresh one on first open."}
+          {t("analysis.description")}
         </p>
       </header>
 

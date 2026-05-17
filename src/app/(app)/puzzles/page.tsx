@@ -16,6 +16,7 @@ import {
 } from "@/lib/puzzles/daily"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
+import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
 
 /**
  * /puzzles → redirect to the next available task in today's daily set.
@@ -45,9 +46,11 @@ export default async function PuzzlesPage() {
   ])
 
   if (!puzzles || puzzles.length === 0) {
+    const locale = await resolveLocaleFromCookie()
+    const {t} = getAppTranslator(locale)
     return (
       <main className="mx-auto flex min-h-svh max-w-lg flex-col items-center justify-center gap-4 px-6 py-12">
-        <p className="text-muted-foreground">Задачи ещё не загружены. Зайдите позже.</p>
+        <p className="text-muted-foreground">{t("puzzles.notLoaded")}</p>
       </main>
     )
   }
@@ -76,39 +79,20 @@ export default async function PuzzlesPage() {
 
   const monthlyCheckoutEnabled = isStripePlanConfigured("monthly")
   const yearlyCheckoutEnabled = isStripePlanConfigured("yearly")
-  const copy =
-    language === "en"
-      ? {
-          back: "Back to dashboard",
-          emptyDescription: "You have solved every available puzzle for now. New tasks will arrive later.",
-          emptyTitle: "All tasks are complete",
-          limitDescription: `Upgrade to Sharpki Pro to keep training after your ${FREE_DAILY_TASK_LIMIT} free daily tasks.`,
-          limitTitle: `You already completed today's ${FREE_DAILY_TASK_LIMIT} daily tasks`,
-          monthlyCta: "Start Pro Monthly",
-          yearlyCta: "Start Pro Yearly",
-        }
-      : {
-          back: "← В кабинет",
-          emptyDescription:
-            "Вы уже решили все доступные задачи. Новые позиции появятся позже.",
-          emptyTitle: "Все задачи уже решены",
-          limitDescription: `Откройте Sharpki Pro, чтобы продолжить тренировку после ${FREE_DAILY_TASK_LIMIT} бесплатных ежедневных заданий.`,
-          limitTitle: `Сегодняшние ${FREE_DAILY_TASK_LIMIT} задания уже выполнены`,
-          monthlyCta: "Оформить Pro Monthly",
-          yearlyCta: "Взять Pro Yearly",
-        }
+  const cookieLocale = await resolveLocaleFromCookie()
+  const {t} = getAppTranslator(cookieLocale)
 
   return (
     <main className="mx-auto flex min-h-svh max-w-lg flex-col justify-center gap-6 px-6 py-12">
       <Card>
         <CardHeader>
           <CardTitle>
-            {nextPuzzleId && subscriptionTier === "free" ? copy.limitTitle : copy.emptyTitle}
+            {nextPuzzleId && subscriptionTier === "free" ? t("puzzles.limitTitle", { count: FREE_DAILY_TASK_LIMIT }) : t("puzzles.allComplete")}
           </CardTitle>
           <CardDescription>
             {nextPuzzleId && subscriptionTier === "free"
-              ? copy.limitDescription
-              : copy.emptyDescription}
+              ? t("puzzles.limitDescription", { count: FREE_DAILY_TASK_LIMIT })
+              : t("puzzles.allCompleteDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
@@ -119,7 +103,7 @@ export default async function PuzzlesPage() {
                 className="w-full"
                 disabled={!monthlyCheckoutEnabled}
               >
-                {copy.monthlyCta}
+                {t("puzzles.monthlyCta")}
               </PricingCheckoutButton>
               <PricingCheckoutButton
                 plan="yearly"
@@ -127,13 +111,13 @@ export default async function PuzzlesPage() {
                 variant="outline"
                 disabled={!yearlyCheckoutEnabled}
               >
-                {copy.yearlyCta}
+                {t("puzzles.yearlyCta")}
               </PricingCheckoutButton>
             </div>
           ) : null}
 
           <Button asChild variant="ghost">
-            <Link href="/dashboard">{copy.back}</Link>
+            <Link href="/dashboard">{t("puzzles.backToDashboard")}</Link>
           </Button>
         </CardContent>
       </Card>
