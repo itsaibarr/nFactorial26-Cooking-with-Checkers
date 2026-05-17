@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { StartGameSubmitButton } from "@/components/game/StartGameSubmitButton"
 import { createClient } from "@/lib/supabase/server"
 
 const startGameSchema = z.object({
@@ -142,9 +142,7 @@ export default async function PlayLobbyPage({
         </Card>
 
         <div className="md:col-span-2">
-          <Button type="submit" size="lg">
-            Начать партию
-          </Button>
+          <StartGameSubmitButton />
         </div>
       </form>
     </main>
