@@ -13,6 +13,6 @@ export const config = {
      * - favicon.ico
      * - any image asset (svg/png/jpg/jpeg/gif/webp)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|ingest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
