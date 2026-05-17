@@ -1,5 +1,6 @@
-import { applyMove, evaluatePosition, getLegalMoves, newGame } from "@/lib/engine/engine"
-import type { PieceColor } from "@/lib/engine/types"
+import { applyMove, getLegalMoves, newGame } from "@/lib/engine/engine"
+import { evaluateState } from "@/lib/engine/eval"
+import type { Move, PieceColor } from "@/lib/engine/types"
 import type { RecordedMoveInput } from "@/lib/game/session"
 import { z } from "zod"
 
@@ -78,16 +79,21 @@ function getSpeedScore(durations: readonly number[]) {
   return clampScore(Math.round(100 - averageDeviationRatio * 100))
 }
 
+function scoreRankedMove(state: ReturnType<typeof newGame>, move: Move) {
+  const nextState = applyMove(state, move)
+  if (nextState.status !== "playing") {
+    return -evaluateState(nextState)
+  }
+
+  return Math.min(...getLegalMoves(nextState).map((reply) => evaluateState(applyMove(nextState, reply))))
+}
+
 function rankMoves(state: ReturnType<typeof newGame>) {
   return getLegalMoves(state)
-    .map((move) => {
-      const nextState = applyMove(state, move)
-
-      return {
-        notation: move.notation,
-        score: -evaluatePosition(nextState).eval,
-      }
-    })
+    .map((move) => ({
+      notation: move.notation,
+      score: scoreRankedMove(state, move),
+    }))
     .sort((left, right) => right.score - left.score)
 }
 
