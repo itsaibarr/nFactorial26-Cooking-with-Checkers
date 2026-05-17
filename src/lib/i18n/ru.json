@@ -1,0 +1,46 @@
+{
+  "dashboard": {
+    "settings": "Настройки",
+    "signOut": "Выйти",
+    "profileDescription": "Ваш тренировочный кабинет.",
+    "sharpnessLabel": "Sharpness Score",
+    "playWithBot": "Играть с ботом",
+    "dailyPuzzle": "Ежедневные задания",
+    "streak": {
+      "none": "Нет серии",
+      "days": "{count, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
+    },
+    "recentGames": {
+      "title": "Последние партии",
+      "description": "Ваши завершённые партии.",
+      "allGames": "Все партии →",
+      "empty": "Партий пока нет. Начните первую игру с ботом.",
+      "botLabel": "Бот: {level}",
+      "results": {
+        "win": "Победа",
+        "loss": "Поражение",
+        "draw": "Ничья",
+        "aborted": "Прервана"
+      },
+      "levels": {
+        "easy": "лёгкий",
+        "medium": "средний",
+        "hard": "сложный"
+      }
+    },
+    "activityHeatmap": {
+      "title": "Календарь активности",
+      "description": "Партии и решённые задачи за последние 12 месяцев.",
+      "summary": "{count, plural, one {# тренировка за последние 12 месяцев} few {# тренировки за последние 12 месяцев} many {# тренировок за последние 12 месяцев} other {# тренировки за последние 12 месяцев}}",
+      "activeDays": "Активных дней: {count}",
+      "srSummary": "За последние 12 месяцев у вас {activityCount, plural, one {# тренировка} few {# тренировки} many {# тренировок} other {# тренировки}} в {activeDays, plural, one {# активном дне} few {# активных днях} many {# активных днях} other {# активных днях}}. Более тёмные клетки означают больше тренировок за день.",
+      "legendDescription": "Цвет показывает, насколько насыщенной была тренировка в конкретный день.",
+      "legendLess": "Реже",
+      "legendMore": "Чаще",
+      "noActivity": "без активности",
+      "trainingCount": "{count, plural, one {# тренировка} few {# тренировки} many {# тренировок} other {# тренировки}}",
+      "gameCount": "{count, plural, one {# партия} few {# партии} many {# партий} other {# партии}}",
+      "puzzleCount": "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
+    }
+  }
+}

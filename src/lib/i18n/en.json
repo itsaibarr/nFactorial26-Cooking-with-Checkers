@@ -1,0 +1,46 @@
+{
+  "dashboard": {
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "profileDescription": "Your training dashboard.",
+    "sharpnessLabel": "Sharpness Score",
+    "playWithBot": "Play vs bot",
+    "dailyPuzzle": "Daily tasks",
+    "streak": {
+      "none": "No streak",
+      "days": "{count, plural, one {# day} other {# days}}"
+    },
+    "recentGames": {
+      "title": "Recent games",
+      "description": "Your completed games.",
+      "allGames": "All games →",
+      "empty": "No games yet. Start your first one against the bot.",
+      "botLabel": "Bot: {level}",
+      "results": {
+        "win": "Win",
+        "loss": "Loss",
+        "draw": "Draw",
+        "aborted": "Aborted"
+      },
+      "levels": {
+        "easy": "easy",
+        "medium": "medium",
+        "hard": "hard"
+      }
+    },
+    "activityHeatmap": {
+      "title": "Activity heatmap",
+      "description": "Games and solved puzzles over the last 12 months.",
+      "summary": "{count, plural, one {# training session in the last 12 months} other {# training sessions in the last 12 months}}",
+      "activeDays": "Active days: {count}",
+      "srSummary": "Over the last 12 months, you have {activityCount, plural, one {# training session} other {# training sessions}} across {activeDays, plural, one {# active day} other {# active days}}. Darker cells mean more training on that day.",
+      "legendDescription": "Color shows how active your training was on a given day.",
+      "legendLess": "Less",
+      "legendMore": "More",
+      "noActivity": "no activity",
+      "trainingCount": "{count, plural, one {# training session} other {# training sessions}}",
+      "gameCount": "{count, plural, one {# game} other {# games}}",
+      "puzzleCount": "{count, plural, one {# puzzle} other {# puzzles}}"
+    }
+  }
+}
