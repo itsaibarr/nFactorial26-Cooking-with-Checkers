@@ -31,6 +31,9 @@ pnpm-debug.log*
 # env files
 .env*.local
 
+# local agent configs (may contain secrets)
+.devin/config.local.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
