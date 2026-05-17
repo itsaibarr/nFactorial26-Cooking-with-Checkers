@@ -64,7 +64,7 @@ export default async function PricingPage({
 
         {canceled === "true" ? (
           <Card className="border-amber-500/40 bg-amber-500/5">
-            <CardContent className="py-4 text-sm text-amber-900">
+            <CardContent className="py-2 text-sm text-amber-900">
               {t("pricing.canceledNotice")}
             </CardContent>
           </Card>
@@ -129,7 +129,7 @@ export default async function PricingPage({
                   </Button>
                 ) : !user ? (
                   <SignInButton className="w-full" ctaLocation="pricing" locale={locale} />
-                ) : profile?.subscription_tier !== "free" ? (
+                ) : profile?.subscription_tier && profile.subscription_tier !== "free" ? (
                   <PortalManageButton className="w-full" />
                 ) : (
                   <PricingCheckoutButton
