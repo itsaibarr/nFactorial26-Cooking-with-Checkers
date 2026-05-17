@@ -3,8 +3,9 @@
 import { useEffect } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { getAppTranslator, type AppLocale } from "@/lib/i18n"
 
-export function DashboardUpgradeToast() {
+export function DashboardUpgradeToast({ locale }: { locale: AppLocale }) {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -18,12 +19,11 @@ export function DashboardUpgradeToast() {
     params.delete("upgraded")
     params.delete("plan")
 
-    toast.success(
-      "Payment received! If the status hasn't updated yet, refresh the page in a few seconds.",
-    )
+    const { t } = getAppTranslator(locale)
+    toast.success(t("payment.upgradeSuccess"))
 
     router.replace(params.size > 0 ? `${pathname}?${params.toString()}` : pathname)
-  }, [pathname, router, searchParams])
+  }, [locale, pathname, router, searchParams])
 
   return null
 }
