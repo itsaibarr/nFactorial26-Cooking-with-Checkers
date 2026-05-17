@@ -42,26 +42,26 @@ export default async function LandingPage({
         </nav>
       </header>
 
-      <div className="flex flex-1 flex-col justify-between">
-        <section className="flex flex-col gap-8 py-16">
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <section className="flex flex-col gap-8 text-center">
           <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
             {t("landing.heroTitle1")}
             <br />
             <span className="text-primary">{t("landing.heroTitle2")}</span>
           </h1>
-          <p className="max-w-xl text-balance text-lg text-muted-foreground">
+          <p className="mx-auto max-w-xl text-balance text-lg text-muted-foreground">
             {t("landing.heroDescription")}
           </p>
           {error === "auth" ? (
-            <Alert variant="destructive" className="max-w-xl">
+            <Alert variant="destructive" className="mx-auto max-w-xl">
               <AlertTitle>{t("landing.authErrorTitle")}</AlertTitle>
               <AlertDescription>
                 {t("landing.authErrorDescription")}
               </AlertDescription>
             </Alert>
           ) : null}
-          <div>
-            <SignInButton />
+          <div className="flex flex-col items-center">
+            <SignInButton locale={locale} />
             <p className="mt-3 text-sm text-muted-foreground">
               {t("landing.freeNote")}
             </p>
@@ -69,7 +69,7 @@ export default async function LandingPage({
         </section>
       </div>
 
-      <footer className="text-sm text-muted-foreground">
+      <footer className="text-center text-sm text-muted-foreground">
         {t("landing.footer", { year: new Date().getFullYear() })}
       </footer>
     </main>
