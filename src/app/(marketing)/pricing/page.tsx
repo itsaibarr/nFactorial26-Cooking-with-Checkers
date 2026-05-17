@@ -17,6 +17,7 @@ import {
   pricingPlans,
 } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
+import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
 
 export default async function PricingPage({
   searchParams,
@@ -28,6 +29,9 @@ export default async function PricingPage({
   const {
     data: {user},
   } = await supabase.auth.getUser()
+
+  const locale = await resolveLocaleFromCookie()
+  const {t} = getAppTranslator(locale)
 
   const {data: profile} = user
     ? await supabase
@@ -48,21 +52,20 @@ export default async function PricingPage({
       <header className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">Sharpki Pro</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">{t("pricing.title")}</h1>
             <p className="max-w-2xl text-muted-foreground">
-              Платный тариф снимает лимиты на AI-разборы и делает ежедневную
-              тренировку непрерывной.
+              {t("pricing.description")}
             </p>
           </div>
           <Button asChild variant="ghost">
-            <Link href={user ? "/dashboard" : "/"}>{user ? "← В кабинет" : "← На главную"}</Link>
+            <Link href={user ? "/dashboard" : "/"}>{user ? t("pricing.backToDashboard") : t("pricing.backToHome")}</Link>
           </Button>
         </div>
 
         {canceled === "true" ? (
           <Card className="border-amber-500/40 bg-amber-500/5">
             <CardContent className="py-4 text-sm text-amber-900">
-              Checkout был закрыт до оплаты. Можно вернуться к выбору плана в любой момент.
+              {t("pricing.canceledNotice")}
             </CardContent>
           </Card>
         ) : null}
@@ -71,9 +74,9 @@ export default async function PricingPage({
           <Card className="border-primary/30 bg-primary/5">
             <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium">Подписка уже активна</p>
+                <p className="font-medium">{t("pricing.alreadyActiveTitle")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Текущий статус: {profile.subscription_status ?? "active"}.
+                  {t("pricing.alreadyActiveStatus", { status: profile.subscription_status ?? "active" })}
                 </p>
               </div>
               <PortalManageButton />
@@ -85,10 +88,9 @@ export default async function PricingPage({
       {!user ? (
         <Card>
           <CardHeader>
-            <CardTitle>Сначала войдите</CardTitle>
+            <CardTitle>{t("pricing.signInTitle")}</CardTitle>
             <CardDescription>
-              Stripe Checkout работает только для авторизованного пользователя,
-              чтобы мы сразу привязали подписку к вашему профилю.
+              {t("pricing.signInDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -126,7 +128,7 @@ export default async function PricingPage({
               <CardContent className="space-y-4">
                 {planItem.plan === "family" ? (
                   <Button className="w-full" disabled>
-                    Скоро
+                    {t("pricing.comingSoon")}
                   </Button>
                 ) : !user ? (
                   <SignInButton className="w-full" ctaLocation="pricing" />
@@ -139,14 +141,14 @@ export default async function PricingPage({
                     disabled={!checkoutReady}
                     variant={planItem.plan === "yearly" ? "outline" : "default"}
                   >
-                    {checkoutReady ? "Оформить подписку" : "Добавьте price ID"}
+                    {checkoutReady ? t("pricing.subscribe") : t("pricing.addPriceId")}
                   </PricingCheckoutButton>
                 )}
 
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>• AI-разборы без дневного лимита</p>
-                  <p>• Подписка активируется сразу после оплаты</p>
-                  <p>• Отмена в любой момент</p>
+                  <p>{t("pricing.benefit1")}</p>
+                  <p>{t("pricing.benefit2")}</p>
+                  <p>{t("pricing.benefit3")}</p>
                 </div>
               </CardContent>
             </Card>
