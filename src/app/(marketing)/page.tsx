@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LandingPageAnalytics } from "@/components/common/LandingPageAnalytics";
 import { SignInButton } from "@/components/common/SignInButton";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,6 +13,8 @@ export default async function LandingPage() {
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col justify-between px-6 py-12">
+      <LandingPageAnalytics />
+
       <header className="flex items-center justify-between">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           Sharpki
