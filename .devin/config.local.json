@@ -48,7 +48,8 @@
       "Exec(tail)",
       "Exec(mv)",
       "Exec(./node_modules/.bin/eslint)",
-      "Exec(wc)"
+      "Exec(wc)",
+      "Exec(ls)"
     ]
   }
 }
