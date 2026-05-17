@@ -33,6 +33,34 @@ function clampScore(score: number) {
   return Math.max(0, Math.min(100, score))
 }
 
+function getMistakePenalty(evalLoss: number) {
+  if (evalLoss >= 400) {
+    return 3.5
+  }
+
+  if (evalLoss >= 250) {
+    return 2.5
+  }
+
+  if (evalLoss >= 150) {
+    return 1.5
+  }
+
+  if (evalLoss >= 75) {
+    return 0.5
+  }
+
+  return 0
+}
+
+function getMoveAccuracyScore(evalLoss: number) {
+  if (evalLoss <= 0) {
+    return 100
+  }
+
+  return clampScore(Math.round(100 - evalLoss / 1.8))
+}
+
 function average(values: readonly number[]) {
   if (values.length === 0) {
     return null
@@ -109,6 +137,7 @@ export function computeGameSharpness({
   let topThreeMatches = 0
   let blunders = 0
   let accuracyTotal = 0
+  let mistakePenaltyTotal = 0
   const playerDurations: number[] = []
 
   for (const recordedMove of moves) {
@@ -134,13 +163,13 @@ export function computeGameSharpness({
         topThreeMatches += 1
       }
 
+      accuracyTotal += getMoveAccuracyScore(evalLoss)
+
+      const mistakePenalty = getMistakePenalty(evalLoss)
       if (evalLoss >= 200) {
         blunders += 1
       }
-
-      accuracyTotal += topThree.includes(move.notation)
-        ? 100
-        : clampScore(Math.round(100 - evalLoss / 4))
+      mistakePenaltyTotal += mistakePenalty
 
       if (typeof recordedMove.durationMs === "number" && recordedMove.durationMs >= 0) {
         playerDurations.push(recordedMove.durationMs)
@@ -155,8 +184,10 @@ export function computeGameSharpness({
   const accuracy = playerMoves === 0 ? 50 : Math.round(accuracyTotal / playerMoves)
   const speed = getSpeedScore(playerDurations)
   const blunderRate =
-    playerMoves === 0 ? 100 : Math.round(((playerMoves - blunders) / playerMoves) * 100)
-  const score = clampScore(Math.round(accuracy * 0.4 + speed * 0.2 + blunderRate * 0.4))
+    playerMoves === 0
+      ? 100
+      : clampScore(Math.round(100 - (mistakePenaltyTotal / playerMoves) * 100))
+  const score = clampScore(Math.round(accuracy * 0.6 + speed * 0.1 + blunderRate * 0.3))
   const averageMoveTimeMs = average(playerDurations)
 
   return {
