@@ -13,6 +13,7 @@ import { PricingAnalytics } from "@/components/common/PricingAnalytics"
 import { PricingCheckoutButton } from "@/components/common/PricingCheckoutButton"
 import { PortalManageButton } from "@/components/common/PortalManageButton"
 import { SignInButton } from "@/components/common/SignInButton"
+import { StripeScript } from "@/components/common/StripeScript"
 import {
   isStripePlanConfigured,
   pricingPlans,
@@ -45,6 +46,7 @@ export default async function PricingPage({
 
   return (
     <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-8 px-6 py-12">
+      <StripeScript />
       <PricingAnalytics
         source="page"
         canceledPlan={canceled === "true" ? plan : undefined}

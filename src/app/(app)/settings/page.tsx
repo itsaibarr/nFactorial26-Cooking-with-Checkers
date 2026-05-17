@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card"
 import { PortalManageButton } from "@/components/common/PortalManageButton"
 import { SignOutButton } from "@/components/common/SignOutButton"
+import { StripeScript } from "@/components/common/StripeScript"
 import {
   DEFAULT_GAMEPLAY_PREFERENCES,
   mapStoredGameplayPreferences,
@@ -95,6 +96,7 @@ export default async function SettingsPage({
 
   return (
     <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
+      <StripeScript />
       <header className="flex items-center justify-between gap-4">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">{t("settings.title")}</h1>
