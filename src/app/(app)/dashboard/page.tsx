@@ -154,7 +154,7 @@ export default async function DashboardPage() {
   })
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 px-6 py-12">
       <DashboardAnalytics />
       <DashboardUpgradeToast locale={locale} />
 
@@ -195,7 +195,7 @@ export default async function DashboardPage() {
 
       {subscriptionTier === "free" && checkoutEnabled ? (
         <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardContent className="flex flex-col gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium">{t("dashboard.subscription.upgradeCta")}</p>
               <p className="text-sm text-muted-foreground">
@@ -209,7 +209,7 @@ export default async function DashboardPage() {
         </Card>
       ) : subscriptionTier !== "free" && profile?.stripe_customer_id ? (
         <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardContent className="flex flex-col gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium">{renderSubscriptionBadge(subscriptionTier, locale)}</p>
               <p className="text-sm text-muted-foreground">

@@ -123,7 +123,7 @@ export function DashboardActivityHeatmap({
               </div>
             </div>
             <div className="flex-1 min-w-0 space-y-[2px]">
-              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "2px"}}>
+              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 10px)`, gap: "2px"}}>
                 {data.weeks.map((week) => (
                   <div key={`month-${week.days[0]?.date ?? "empty"}`} className="relative h-[14px]">
                     {week.monthLabelDate ? (
@@ -134,7 +134,7 @@ export function DashboardActivityHeatmap({
                   </div>
                 ))}
               </div>
-              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "2px"}}>
+              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 10px)`, gap: "2px"}}>
                 {data.weeks.map((week) => (
                   <div key={`week-${week.days[0]?.date ?? "empty"}`} className="flex flex-col gap-[2px]">
                     {week.days.map((day) => (
