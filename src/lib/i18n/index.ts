@@ -1,4 +1,5 @@
 import { createTranslator } from "use-intl/core"
+import { cookies } from "next/headers"
 import en from "@/lib/i18n/en.json"
 import ru from "@/lib/i18n/ru.json"
 
@@ -11,6 +12,12 @@ export type AppLocale = keyof typeof messages
 
 export function resolveAppLocale(locale: string | null | undefined): AppLocale {
   return locale === "en" ? "en" : "ru"
+}
+
+export async function resolveLocaleFromCookie(): Promise<AppLocale> {
+  const cookieStore = await cookies()
+  const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value
+  return resolveAppLocale(cookieLocale)
 }
 
 export function getAppTranslator(localeInput: string | null | undefined) {
