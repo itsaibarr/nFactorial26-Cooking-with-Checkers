@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Exec(curl)",
+      "Exec(python3)",
+      "Exec(mkdir)",
+      "Exec(npx)",
+      "Exec(head)",
+      "Exec(sed)",
+      "Exec(git remote)",
+      "Exec(git status)",
+      "Exec(git log)",
+      "Exec(find)",
+      "Exec(cat)",
+      "Exec(git add)",
+      "Exec(git commit)"
+    ]
+  }
+}
