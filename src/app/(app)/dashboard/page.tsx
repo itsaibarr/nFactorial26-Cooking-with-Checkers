@@ -20,7 +20,8 @@ import {
   buildDashboardActivityHeatmap,
   getDashboardActivityRange,
 } from "@/lib/dashboard/activity-heatmap"
-import { getAppTranslator, getDateTimeLocale, resolveAppLocale, type AppLocale } from "@/lib/i18n"
+import { getAppTranslator, getDateTimeLocale, type AppLocale } from "@/lib/i18n"
+import { resolveLocaleFromCookie } from "@/lib/i18n/server"
 import type { SubscriptionTier } from "@/lib/rate-limit"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
@@ -135,7 +136,7 @@ export default async function DashboardPage() {
         .gte("created_at", activityStartTimestamp),
     ])
 
-  const locale = resolveAppLocale(profile?.language)
+  const locale = await resolveLocaleFromCookie()
   const {t} = getAppTranslator(locale)
   const subscriptionTier: SubscriptionTier =
     profile?.subscription_tier === "pro" || profile?.subscription_tier === "family"
