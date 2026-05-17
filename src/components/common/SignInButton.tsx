@@ -1,15 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { getAppTranslator, type AppLocale } from "@/lib/i18n";
 import { posthog } from "@/lib/posthog/client";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignInButton({
   className,
   ctaLocation = "hero",
+  locale = "ru",
 }: {
   className?: string;
   ctaLocation?: string;
+  locale?: AppLocale;
 }) {
   async function handleSignIn() {
     if (posthog.__loaded) {
@@ -33,9 +36,11 @@ export function SignInButton({
     }
   }
 
+  const { t } = getAppTranslator(locale);
+
   return (
     <Button size="lg" onClick={handleSignIn} className={className}>
-      Войти через Google
+      {t("landing.signIn")}
     </Button>
   );
 }

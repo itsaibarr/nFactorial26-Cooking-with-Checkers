@@ -101,7 +101,7 @@ export default async function PricingPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SignInButton ctaLocation="pricing" />
+            <SignInButton ctaLocation="pricing" locale={locale} />
           </CardContent>
         </Card>
       ) : null}
@@ -138,7 +138,7 @@ export default async function PricingPage({
                     {t("pricing.comingSoon")}
                   </Button>
                 ) : !user ? (
-                  <SignInButton className="w-full" ctaLocation="pricing" />
+                  <SignInButton className="w-full" ctaLocation="pricing" locale={locale} />
                 ) : profile?.subscription_tier !== "free" ? (
                   <PortalManageButton className="w-full" />
                 ) : (
