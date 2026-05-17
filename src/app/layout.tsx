@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { PostHogProvider } from "@/components/common/PostHogProvider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 import { getAppUrl, siteDescription, siteName, siteTitle } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
@@ -53,7 +54,10 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
-          <PostHogProvider>{children}</PostHogProvider>
+          <PostHogProvider>
+            {children}
+            <Toaster richColors />
+          </PostHogProvider>
         </ThemeProvider>
       </body>
     </html>
