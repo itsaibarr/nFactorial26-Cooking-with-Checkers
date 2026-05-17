@@ -17,6 +17,8 @@ import type {
 import { cn } from "@/lib/utils"
 
 const LEGEND_LEVELS: ActivityLevel[] = [0, 1, 2, 3, 4]
+// Estimated tooltip width (px) — used for edge detection only.
+const TOOLTIP_ESTIMATED_WIDTH = 120
 
 export function DashboardActivityHeatmap({
   data,
@@ -30,6 +32,10 @@ export function DashboardActivityHeatmap({
     day: DashboardActivityHeatmapDay
     x: number
     y: number
+    /** "above" | "below" — vertical placement relative to the cell */
+    vDir: "above" | "below"
+    /** "center" | "left" | "right" — which edge of the tooltip is pinned */
+    hAnchor: "center" | "left" | "right"
   } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -39,10 +45,29 @@ export function DashboardActivityHeatmap({
 
       const containerRect = containerRef.current.getBoundingClientRect()
       const cellRect = cell.getBoundingClientRect()
-      const x = cellRect.left + cellRect.width / 2 - containerRect.left
-      const y = cellRect.top - containerRect.top - 8
 
-      setTooltip({day, x, y})
+      const cellCenterX = cellRect.left + cellRect.width / 2 - containerRect.left
+      const containerWidth = containerRect.width
+
+      // Decide horizontal anchor: if cell center is close to the right edge, pin
+      // the tooltip's right side to the cell center; near left edge, pin left.
+      let hAnchor: "center" | "left" | "right" = "center"
+      if (cellCenterX + TOOLTIP_ESTIMATED_WIDTH / 2 > containerWidth) {
+        hAnchor = "right"
+      } else if (cellCenterX - TOOLTIP_ESTIMATED_WIDTH / 2 < 0) {
+        hAnchor = "left"
+      }
+
+      // Place above the cell by default; the cell row height is small so above
+      // is almost always within the container.
+      const y = cellRect.top - containerRect.top - 6
+      const vDir: "above" | "below" = y < 40 ? "below" : "above"
+      const adjustedY =
+        vDir === "below"
+          ? cellRect.bottom - containerRect.top + 6
+          : y
+
+      setTooltip({day, x: cellCenterX, y: adjustedY, vDir, hAnchor})
     },
     [],
   )
@@ -50,6 +75,13 @@ export function DashboardActivityHeatmap({
   const handleCellLeave = useCallback(() => {
     setTooltip(null)
   }, [])
+
+  // Build the CSS transform string from the anchor values.
+  function tooltipTransform(vDir: "above" | "below", hAnchor: "center" | "left" | "right") {
+    const ty = vDir === "above" ? "-100%" : "0%"
+    const tx = hAnchor === "center" ? "-50%" : hAnchor === "right" ? "-100%" : "0%"
+    return `translate(${tx}, ${ty})`
+  }
 
   return (
     <Card>
@@ -77,48 +109,48 @@ export function DashboardActivityHeatmap({
           })}
         </p>
         <div ref={containerRef} className="relative">
-          <div className="flex gap-2" aria-hidden="true">
-            <div className="pt-6 shrink-0">
-              <div className="flex flex-col gap-[3px]">
+          <div className="flex gap-1.5" aria-hidden="true">
+            <div className="pt-5 shrink-0">
+              <div className="flex flex-col gap-[2px]">
                 {getDayLabels(locale).map((label, index) => (
                   <div
                     key={`day-label-${index}`}
-                    className="flex h-[10px] items-center text-[10px] leading-none text-muted-foreground"
+                    className="flex h-[9px] items-center text-[9px] leading-none text-muted-foreground"
                   >
                     {label}
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex-1 min-w-0 space-y-[3px]">
-              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "3px"}}>
+            <div className="flex-1 min-w-0 space-y-[2px]">
+              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "2px"}}>
                 {data.weeks.map((week) => (
-                  <div key={`month-${week.days[0]?.date ?? "empty"}`} className="relative h-4">
+                  <div key={`month-${week.days[0]?.date ?? "empty"}`} className="relative h-[14px]">
                     {week.monthLabelDate ? (
-                      <span className="absolute left-0 top-0 whitespace-nowrap text-[10px] leading-none text-muted-foreground">
+                      <span className="absolute left-0 top-0 whitespace-nowrap text-[9px] leading-none text-muted-foreground">
                         {formatMonthLabel(locale, week.monthLabelDate)}
                       </span>
                     ) : null}
                   </div>
                 ))}
               </div>
-              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "3px"}}>
+              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "2px"}}>
                 {data.weeks.map((week) => (
-                  <div key={`week-${week.days[0]?.date ?? "empty"}`} className="flex flex-col gap-[3px]">
+                  <div key={`week-${week.days[0]?.date ?? "empty"}`} className="flex flex-col gap-[2px]">
                     {week.days.map((day) => (
                       <div
                         key={day.date}
                         onMouseEnter={(e) => handleCellEnter(day, e.currentTarget)}
                         onMouseLeave={handleCellLeave}
                         className={cn(
-                          "aspect-square w-full rounded-[3px] border transition-colors",
+                          "aspect-square w-full rounded-[2px] border transition-colors",
                           !day.inRange && "border-transparent bg-transparent",
                           day.inRange && day.level === 0 && "border-border/60 bg-muted/70 dark:border-border/50 dark:bg-muted/40",
                           day.inRange && day.level === 1 && "border-amber-200 bg-amber-100 dark:border-amber-900/80 dark:bg-amber-950/60",
                           day.inRange && day.level === 2 && "border-amber-300 bg-amber-200 dark:border-amber-800 dark:bg-amber-900/80",
                           day.inRange && day.level === 3 && "border-amber-400 bg-amber-400 dark:border-amber-700 dark:bg-amber-700",
                           day.inRange && day.level === 4 && "border-amber-600 bg-amber-600 dark:border-amber-500 dark:bg-amber-500",
-                          day.inRange && day.level > 0 && "hover:ring-2 hover:ring-amber-400/50 hover:ring-offset-1",
+                          day.inRange && day.level > 0 && "hover:ring-1 hover:ring-amber-400/60 hover:ring-offset-1",
                         )}
                       />
                     ))}
@@ -129,8 +161,12 @@ export function DashboardActivityHeatmap({
           </div>
           {tooltip ? (
             <div
-              className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-md border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md"
-              style={{left: tooltip.x, top: tooltip.y}}
+              className="pointer-events-none absolute z-10 whitespace-nowrap rounded-md border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md"
+              style={{
+                left: tooltip.x,
+                top: tooltip.y,
+                transform: tooltipTransform(tooltip.vDir, tooltip.hAnchor),
+              }}
             >
               <p className="font-medium">{formatDayDate(tooltip.day, locale)}</p>
               <p className="text-muted-foreground">{formatDayCounts(tooltip.day, t)}</p>
