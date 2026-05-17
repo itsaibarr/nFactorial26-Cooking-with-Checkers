@@ -13,22 +13,23 @@ import {
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import type { BoardTheme, CaptureInputMode, GameplayPreferences } from "@/lib/game/preferences"
+import { getAppTranslator, type AppLocale } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 const CAPTURE_MODE_OPTIONS: Array<{
   readonly value: CaptureInputMode
-  readonly title: string
-  readonly description: string
+  readonly titleKey: string
+  readonly descriptionKey: string
 }> = [
   {
     value: "full_move",
-    title: "Весь маршрут сразу",
-    description: "Вы кликаете один раз — шашка проходит весь путь взятия до конца.",
+    titleKey: "settings.captureFullMove",
+    descriptionKey: "settings.captureFullMoveDescription",
   },
   {
     value: "step_by_step",
-    title: "Шаг за шагом",
-    description: "При цепном взятии вы выбираете следующую жертву на каждом шаге.",
+    titleKey: "settings.captureStepByStep",
+    descriptionKey: "settings.captureStepByStepDescription",
   },
 ]
 
@@ -95,9 +96,12 @@ function arePreferencesEqual(left: GameplayPreferences, right: GameplayPreferenc
 
 export function GamePreferencesForm({
   initialPreferences,
+  locale,
 }: {
   initialPreferences: GameplayPreferences
+  locale: AppLocale
 }) {
+  const {t} = getAppTranslator(locale)
   const [preferences, setPreferences] = useState(initialPreferences)
   const [savedPreferences, setSavedPreferences] = useState(initialPreferences)
   const [saving, setSaving] = useState(false)
@@ -132,9 +136,9 @@ export function GamePreferencesForm({
       }
 
       setSavedPreferences(preferences)
-      toast.success("Игровые настройки сохранены.")
+      toast.success(t("settings.preferencesSaved"))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Не удалось сохранить настройки.")
+      toast.error(error instanceof Error ? error.message : t("settings.preferencesSaveError"))
     } finally {
       setSaving(false)
     }
@@ -143,18 +147,18 @@ export function GamePreferencesForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Игровые настройки</CardTitle>
+        <CardTitle>{t("settings.gamePreferences")}</CardTitle>
         <CardDescription>
-          Управляйте подсказками на доске, способом выбора взятия и внешним видом партии.
+          {t("settings.gamePreferencesDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
           <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
             <div className="space-y-1">
-              <Label htmlFor="show-legal-moves">Показывать возможные ходы</Label>
+              <Label htmlFor="show-legal-moves">{t("settings.showLegalMoves")}</Label>
               <p className="text-sm text-muted-foreground">
-                Подсвечивать клетки, куда сейчас можно пойти или побить.
+                {t("settings.showLegalMovesDescription")}
               </p>
             </div>
             <Switch
@@ -171,9 +175,9 @@ export function GamePreferencesForm({
 
           <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
             <div className="space-y-1">
-              <Label htmlFor="show-recommended-moves">Показывать рекомендуемый ход</Label>
+              <Label htmlFor="show-recommended-moves">{t("settings.showRecommended")}</Label>
               <p className="text-sm text-muted-foreground">
-                Подсвечивать один рекомендуемый ход от движка во время вашего хода.
+                {t("settings.showRecommendedDescription")}
               </p>
             </div>
             <Switch
@@ -191,9 +195,9 @@ export function GamePreferencesForm({
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label>Выбор траектории взятия</Label>
+            <Label>{t("settings.captureModeTitle")}</Label>
             <p className="text-sm text-muted-foreground">
-              В русском шашечном ходе взятие всё равно должно завершаться полностью, но способ выбора можно менять.
+              {t("settings.captureModeDescription")}
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -216,8 +220,8 @@ export function GamePreferencesForm({
                     }))
                   }
                 >
-                  <div className="font-medium">{option.title}</div>
-                  <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
+                  <div className="font-medium">{t(option.titleKey as Parameters<typeof t>[0])}</div>
+                  <p className="mt-1 text-sm text-muted-foreground">{t(option.descriptionKey as Parameters<typeof t>[0])}</p>
                 </button>
               )
             })}
@@ -226,9 +230,9 @@ export function GamePreferencesForm({
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label>Тема доски и шашек</Label>
+            <Label>{t("settings.boardThemeTitle")}</Label>
             <p className="text-sm text-muted-foreground">
-              Выберите оформление, которое вам приятнее для долгих партий.
+              {t("settings.boardThemeDescription")}
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -278,10 +282,10 @@ export function GamePreferencesForm({
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            {isDirty ? "Есть несохранённые изменения." : "Все изменения сохранены."}
+            {isDirty ? t("settings.unsavedChanges") : t("settings.allSaved")}
           </p>
           <Button type="button" disabled={!isDirty || saving} onClick={handleSave}>
-            {saving ? "Сохраняем…" : "Сохранить игровые настройки"}
+            {saving ? t("settings.saving") : t("settings.savePreferences")}
           </Button>
         </div>
       </CardContent>
