@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { captureServerEvent, captureServerException } from "@/lib/posthog/server";
+import { isFirstSignIn } from "@/lib/posthog/shared";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNextPath(next: string | null) {
@@ -20,10 +22,24 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (data.user) {
+        await captureServerEvent({
+          distinctId: data.user.id,
+          event: isFirstSignIn(data.user)
+            ? "signup_completed"
+            : "login_completed",
+          properties: { method: "google" },
+        }).catch(() => undefined);
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
+
+    await captureServerException(error, undefined, {
+      stage: "auth_callback_exchange",
+    }).catch(() => undefined);
   }
 
   return NextResponse.redirect(`${origin}/?error=auth`);
