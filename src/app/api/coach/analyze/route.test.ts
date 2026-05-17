@@ -323,21 +323,32 @@ describe("POST /api/coach/analyze", () => {
     const {supabase, insertedRateLimits, upsertedAnalyses} = createMockSupabase()
     createClientMock.mockResolvedValue(supabase)
 
+    const freshAnalysis = {
+      overall_quality: "good" as const,
+      sharpness_score_for_this_game: 81,
+      highlights: [
+        {
+          move_number: 1,
+          type: "good_idea" as const,
+          what_you_did: "Вы захватили инициативу.",
+          what_to_consider: "Продолжайте искать такие активные решения.",
+        },
+      ],
+      key_lesson: "Ищите активные продолжения после выхода в центр.",
+      encouragement: "Вы хорошо начали партию и не испугались осложнений.",
+    }
+
     getCoachAnalysisMock.mockImplementation(
       async (context: CoachGameContext) => ({
         analysis: {
-          overall_quality: "good",
+          ...freshAnalysis,
           sharpness_score_for_this_game: context.sharpnessScore,
           highlights: [
             {
+              ...freshAnalysis.highlights[0],
               move_number: context.criticalMoments[0]?.move_number ?? 1,
-              type: "good_idea",
-              what_you_did: "Вы захватили инициативу.",
-              what_to_consider: "Продолжайте искать такие активные решения.",
             },
           ],
-          key_lesson: "Ищите активные продолжения после выхода в центр.",
-          encouragement: "Вы хорошо начали партию и не испугались осложнений.",
         },
         model: "accounts/fireworks/models/qwen3p6-plus",
         tokensIn: 1500,
@@ -362,7 +373,12 @@ describe("POST /api/coach/analyze", () => {
 
     expect(response.status).toBe(200)
 
-    const payload = coachAnalysisSchema.parse(await response.json())
+    await expect(response.json()).resolves.toEqual({
+      ...freshAnalysis,
+      degraded: false,
+    })
+
+    const payload = coachAnalysisSchema.parse(freshAnalysis)
     expect(payload.highlights[0]?.move_number).toBeGreaterThanOrEqual(1)
     expect(insertedRateLimits).toHaveLength(1)
     expect(upsertedAnalyses[0]).toMatchObject({
