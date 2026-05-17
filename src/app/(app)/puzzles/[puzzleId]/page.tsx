@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/server"
 import type { CreateGameStateOptions, PieceColor } from "@/lib/engine/types"
+import { isStripePlanConfigured } from "@/lib/stripe/products"
 
 interface PageProps {
   params: Promise<{puzzleId: string}>
@@ -92,6 +93,8 @@ export default async function PuzzlePage({params}: PageProps) {
     profile?.subscription_tier === "pro" || profile?.subscription_tier === "family"
       ? profile.subscription_tier
       : "free"
+  const monthlyCheckoutEnabled = isStripePlanConfigured("monthly")
+  const yearlyCheckoutEnabled = isStripePlanConfigured("yearly")
   const parsedGameplayPreferences = storedGameplayPreferencesSchema.safeParse(profile)
   const gameplayPreferences = parsedGameplayPreferences.success
     ? mapStoredGameplayPreferences(parsedGameplayPreferences.data)
@@ -110,7 +113,7 @@ export default async function PuzzlePage({params}: PageProps) {
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle>Задача дня</CardTitle>
+              <CardTitle>Ежедневное задание</CardTitle>
               <CardDescription className="mt-1">
                 Найдите лучший ход для{" "}
                 {puzzle.side_to_move === "white" ? "белых" : "чёрных"}
@@ -134,6 +137,8 @@ export default async function PuzzlePage({params}: PageProps) {
             alreadySolved={alreadySolved}
             language={language}
             subscriptionTier={subscriptionTier}
+            monthlyCheckoutEnabled={monthlyCheckoutEnabled}
+            yearlyCheckoutEnabled={yearlyCheckoutEnabled}
             gameplayPreferences={gameplayPreferences}
           />
         </CardContent>

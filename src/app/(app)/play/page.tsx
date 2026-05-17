@@ -116,26 +116,22 @@ export default async function PlayLobbyPage({
         <Card>
           <CardHeader>
             <CardTitle>Сила бота</CardTitle>
-            <CardDescription>
-              Easy играет быстро и проще. Medium и Hard считают ход во
-              встроенном Web Worker.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <LevelOption
               title="Лёгкий"
-              description="Случайный легальный ход для быстрого старта."
+              description="Делает случайные ходы. Подходит для первой партии."
               value="easy"
               defaultChecked
             />
             <LevelOption
               title="Средний"
-              description="Negamax depth 4 во worker."
+              description="Думает на несколько ходов вперёд."
               value="medium"
             />
             <LevelOption
               title="Сильный"
-              description="Negamax depth 6 во worker."
+              description="Считает глубже и ошибается редко."
               value="hard"
             />
           </CardContent>

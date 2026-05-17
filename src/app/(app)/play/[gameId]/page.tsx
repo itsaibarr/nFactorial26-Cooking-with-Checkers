@@ -8,6 +8,7 @@ import {
 } from "@/lib/game/preferences"
 import { recordedMoveListSchema, replayRecordedGame } from "@/lib/game/session"
 import { sharpnessBreakdownSchema } from "@/lib/sharpness/compute"
+import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
 
 const storedGameSchema = z.object({
@@ -77,6 +78,8 @@ export default async function PlayGamePage({
     profile?.subscription_tier === "pro" || profile?.subscription_tier === "family"
       ? profile.subscription_tier
       : "free"
+  const monthlyCheckoutEnabled = isStripePlanConfigured("monthly")
+  const yearlyCheckoutEnabled = isStripePlanConfigured("yearly")
   const parsedGameplayPreferences = storedGameplayPreferencesSchema.safeParse(profile)
   const gameplayPreferences = parsedGameplayPreferences.success
     ? mapStoredGameplayPreferences(parsedGameplayPreferences.data)
@@ -100,6 +103,8 @@ export default async function PlayGamePage({
         opponentLevel={parsedGame.data.opponent_level}
         language={language}
         subscriptionTier={subscriptionTier}
+        monthlyCheckoutEnabled={monthlyCheckoutEnabled}
+        yearlyCheckoutEnabled={yearlyCheckoutEnabled}
         gameplayPreferences={gameplayPreferences}
         initialState={replayed.state}
         initialMoves={replayed.moves}

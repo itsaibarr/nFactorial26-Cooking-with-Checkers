@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { posthog } from "@/lib/posthog/client"
 import type { CoachLanguage } from "@/lib/coach/types"
+import { FREE_DAILY_TASK_LIMIT } from "@/lib/puzzles/daily"
 import type { PaywallTriggerReason } from "@/lib/rate-limit"
 
 function getReasonCopy(
@@ -22,10 +23,10 @@ function getReasonCopy(
 ) {
   if (language === "ru") {
     const descriptions: Record<PaywallTriggerReason, string> = {
-      analysis_limit: "Вы уже использовали сегодняшний бесплатный AI-разбор.",
-      game_limit: "Бесплатный дневной лимит партий на сегодня исчерпан.",
-      puzzle_limit: "Бесплатный дневной лимит задач на сегодня исчерпан.",
-      manual: "Откройте Sharpki Pro, чтобы убрать лимиты и вернуться к игре без пауз.",
+      analysis_limit: "Бесплатный разбор на сегодня уже использован.",
+      game_limit: "Бесплатные партии на сегодня закончились.",
+      puzzle_limit: `Сегодняшние ${FREE_DAILY_TASK_LIMIT} бесплатные задачи уже решены.`,
+      manual: "Откройте Sharpki Pro, чтобы убрать лимиты и не прерывать тренировку.",
     }
 
     return {
@@ -33,8 +34,8 @@ function getReasonCopy(
       description: descriptions[triggerReason],
       benefits: [
         "Безлимитные AI-разборы и задачи",
-        "До 10 разборов в час для платного тарифа",
-        "Отмена в любой момент через Stripe",
+        "До 10 разборов в час",
+        "Отмена в любой момент, без лишних шагов",
       ],
       monthlyCta: "Оформить Pro Monthly",
       yearlyCta: "Взять Pro Yearly",
@@ -42,19 +43,19 @@ function getReasonCopy(
   }
 
   const descriptions: Record<PaywallTriggerReason, string> = {
-    analysis_limit: "You have already used today's free AI analysis.",
-    game_limit: "You have already used today's free game limit.",
-    puzzle_limit: "You have already used today's free puzzle limit.",
-    manual: "Unlock Sharpki Pro to remove limits and get back to training.",
+    analysis_limit: "You've used today's free AI review.",
+    game_limit: "You've used today's free games.",
+    puzzle_limit: `You've finished today's ${FREE_DAILY_TASK_LIMIT} free puzzles.`,
+    manual: "Go Pro to train without interruptions.",
   }
 
   return {
-    title: "Unlock Sharpki Pro",
+    title: "Upgrade to Sharpki Pro",
     description: descriptions[triggerReason],
     benefits: [
-      "Unlimited AI coaching and puzzles",
-      "Up to 10 analyses per hour on the paid tier",
-      "Cancel any time through Stripe",
+      "Unlimited AI reviews and puzzles",
+      "Up to 10 AI reviews per hour",
+      "Cancel any time, no questions asked",
     ],
     monthlyCta: "Start Pro Monthly",
     yearlyCta: "Start Pro Yearly",
@@ -67,12 +68,16 @@ export function PaywallModal({
   language,
   triggerReason,
   currentTier = "free",
+  monthlyCheckoutEnabled = true,
+  yearlyCheckoutEnabled = true,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   language: CoachLanguage
   triggerReason: PaywallTriggerReason
   currentTier?: "free" | "pro" | "family"
+  monthlyCheckoutEnabled?: boolean
+  yearlyCheckoutEnabled?: boolean
 }) {
   const copy = getReasonCopy(language, triggerReason)
   const previousOpen = useRef(false)
@@ -122,10 +127,19 @@ export function PaywallModal({
         </div>
 
         <DialogFooter className="grid gap-2 sm:grid-cols-2">
-          <PricingCheckoutButton plan="monthly" className="w-full">
+          <PricingCheckoutButton
+            plan="monthly"
+            className="w-full"
+            disabled={!monthlyCheckoutEnabled}
+          >
             {copy.monthlyCta}
           </PricingCheckoutButton>
-          <PricingCheckoutButton plan="yearly" className="w-full" variant="outline">
+          <PricingCheckoutButton
+            plan="yearly"
+            className="w-full"
+            variant="outline"
+            disabled={!yearlyCheckoutEnabled}
+          >
             {copy.yearlyCta}
           </PricingCheckoutButton>
         </DialogFooter>

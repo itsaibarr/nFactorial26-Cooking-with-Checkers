@@ -44,7 +44,7 @@ function getDescription(result: GameResult, playerColor: PieceColor) {
   }
 
   if (result === "aborted") {
-    return "Партия остановлена до естественного завершения."
+    return "Вы завершили партию до конца."
   }
 
   return "Партия закончилась вничью."

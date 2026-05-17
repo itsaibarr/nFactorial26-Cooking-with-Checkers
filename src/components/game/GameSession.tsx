@@ -70,6 +70,8 @@ interface GameSessionProps {
   readonly opponentLevel: DifficultyLevel
   readonly language: "ru" | "en"
   readonly subscriptionTier: SubscriptionTier
+  readonly monthlyCheckoutEnabled: boolean
+  readonly yearlyCheckoutEnabled: boolean
   readonly gameplayPreferences: GameplayPreferences
   readonly initialState: GameState
   readonly initialMoves: readonly RecordedMove[]
@@ -109,6 +111,8 @@ export function GameSession({
   opponentLevel,
   language,
   subscriptionTier,
+  monthlyCheckoutEnabled,
+  yearlyCheckoutEnabled,
   gameplayPreferences,
   initialState,
   initialMoves,
@@ -839,6 +843,8 @@ export function GameSession({
           language={language}
           triggerReason={paywallReason}
           currentTier={subscriptionTier}
+          monthlyCheckoutEnabled={monthlyCheckoutEnabled}
+          yearlyCheckoutEnabled={yearlyCheckoutEnabled}
         />
       ) : null}
     </>

@@ -19,7 +19,7 @@ import {
   coachAnalysisFailureReasonSchema,
   coachAnalysisSchema,
 } from "@/lib/coach/types"
-import type { PaywallTriggerReason } from "@/lib/rate-limit"
+import type { PaywallTriggerReason, SubscriptionTier } from "@/lib/rate-limit"
 
 const ANALYSIS_REQUEST_TIMEOUT_MS = 28_000
 const PROGRESS_STAGES = [
@@ -31,7 +31,7 @@ const PROGRESS_STAGES = [
 
 const coachAnalysisResponseSchema = coachAnalysisSchema.extend({
   degraded: z.boolean().optional(),
-  failureReason: coachAnalysisFailureReasonSchema.optional(),
+  failureReason: coachAnalysisFailureReasonSchema.nullable().optional(),
 })
 
 function getCopy(language: CoachLanguage) {
@@ -39,95 +39,95 @@ function getCopy(language: CoachLanguage) {
     return {
       title: "AI-разбор партии",
       description: "Тёплый разбор на основе ваших ходов и оценок движка.",
-      loading: "Готовим персональный разбор партии...",
-      error: "Не удалось получить разбор. Попробуйте ещё раз.",
-      timeoutError: "AI-разбор отвечает слишком долго. Попробуйте ещё раз.",
+      loading: "Смотрим вашу партию...",
+      error: "Разбор не загрузился. Попробуйте ещё раз.",
+      timeoutError: "AI-разбор слишком долго не отвечал. Попробуйте ещё раз.",
       rateLimitFree:
-        "Лимит бесплатных разборов достигнут. Откройте Pro, чтобы продолжить без паузы.",
+        "Бесплатный разбор на сегодня уже использован. Откройте Pro, чтобы продолжить.",
       rateLimitPaid:
-        "Почасовой лимит для платного тарифа уже использован. Попробуйте снова в следующем часу.",
-      retry: "Повторить запрос",
-      retryFull: "Повторить полный AI-разбор",
+        "Почасовой лимит разборов исчерпан. Попробуйте снова в следующем часу.",
+      retry: "Повторить",
+      retryFull: "Запросить полный разбор",
       unlock: "Открыть Pro",
       highlightsTitle: "Ключевые моменты",
-      highlightsDescription: "Разбор опирается на реальные ходы из этой партии.",
+      highlightsDescription: "Разбор основан на реальных ходах из этой партии.",
       lessonTitle: "Главный урок",
-      encouragementTitle: "Поддержка от тренера",
+      encouragementTitle: "От тренера",
       backToGame: "Назад к партии",
       playAgain: "Сыграть ещё",
       scoreLabel: "Sharpness Score",
-      scoreDescription: "Этот показатель должен совпадать с сохранённой партией.",
+      scoreDescription: "Ваш результат за эту партию.",
       verdicts: {
         excellent: "Отличная партия",
         good: "Хорошая партия",
-        developing: "Есть что закрепить",
-        tough_game: "Трудная партия, но полезный опыт",
+        developing: "Есть что улучшить",
+        tough_game: "Трудная партия — полезный опыт",
       },
-      progressTitle: "Готовность AI-разбора",
+      progressTitle: "Готовим разбор",
       progressLabels: {
-        20: "Перепроверяем ходы партии",
+        20: "Перебираем ходы партии",
         45: "Ищем поворотные моменты",
-        72: "Собираем персональные советы",
-        90: "Проверяем и сохраняем результат",
+        72: "Пишем советы для вас",
+        90: "Сохраняем результат",
       } satisfies Record<number, string>,
       readyToast: "AI-разбор готов",
-      degradedToast: "Пока готов только быстрый разбор",
-      degradedBannerTitle: "Показан быстрый engine-based разбор",
+      degradedToast: "Готов краткий разбор",
+      degradedBannerTitle: "Показан краткий разбор по движку",
       degradedBannerDescription:
-        "Полный ответ от AI Coach не успел прийти. Этот вариант всё ещё опирается на движок и реальные ходы, но позже можно попробовать запросить более подробный разбор ещё раз.",
+        "Полный AI-разбор не успел прийти вовремя. Этот вариант основан на ваших реальных ходах и оценках движка. Попробуйте запросить полный разбор позже.",
       degradedReasonLabels: {
-        timeout: "Причина: модель отвечала слишком долго.",
-        parse: "Причина: ответ модели пришлось заменить безопасным fallback.",
-        auth: "Причина: AI-провайдер временно недоступен.",
-        unknown: "Причина: сервер вернул безопасный fallback.",
+        timeout: "Модель слишком долго не отвечала.",
+        parse: "Не удалось прочитать ответ модели.",
+        auth: "AI-провайдер временно недоступен.",
+        unknown: "На сервере произошла ошибка.",
       } satisfies Record<CoachAnalysisFailureReason, string>,
     }
   }
 
   return {
-    title: "AI game review",
-    description: "A warm recap built from your real moves and engine signals.",
-    loading: "Preparing your personal game review...",
-    error: "The review could not be loaded. Please try again.",
-    timeoutError: "The AI review took too long to respond. Please try again.",
+    title: "Game review",
+    description: "What your coach noticed, based on your real moves and engine scores.",
+    loading: "Looking at your game...",
+    error: "Couldn't load your review. Try again.",
+    timeoutError: "The AI took too long. Try again.",
     rateLimitFree:
-      "You have reached the free analysis limit for now. Unlock Pro to continue right away.",
+      "You've used your free analysis for today. Upgrade to Pro to keep going.",
     rateLimitPaid:
-      "You have reached the paid hourly analysis limit. Please try again next hour.",
+      "You've hit the hourly limit. Try again next hour.",
     retry: "Try again",
-    retryFull: "Retry full AI review",
-    unlock: "Unlock Pro",
+    retryFull: "Get full review",
+    unlock: "Upgrade to Pro",
     highlightsTitle: "Key moments",
-    highlightsDescription: "These notes refer to real moves from this game.",
-    lessonTitle: "Main lesson",
-    encouragementTitle: "Coach encouragement",
+    highlightsDescription: "Based on moves from this game.",
+    lessonTitle: "Takeaway",
+    encouragementTitle: "From your coach",
     backToGame: "Back to game",
     playAgain: "Play again",
     scoreLabel: "Sharpness Score",
-    scoreDescription: "This should match the score saved with the game.",
+    scoreDescription: "Your score for this game.",
     verdicts: {
-      excellent: "Excellent game",
+      excellent: "Excellent",
       good: "Good game",
-      developing: "Good progress",
-      tough_game: "Tough game, useful lesson",
+      developing: "Room to improve",
+      tough_game: "Tough one — still worth it",
     },
-    progressTitle: "AI review readiness",
+    progressTitle: "Getting your review",
     progressLabels: {
       20: "Replaying your moves",
-      45: "Finding turning points",
-      72: "Drafting personal coaching notes",
-      90: "Validating and saving the result",
+      45: "Spotting turning points",
+      72: "Writing coaching notes",
+      90: "Saving your review",
     } satisfies Record<number, string>,
-    readyToast: "Your AI review is ready",
-    degradedToast: "A quick fallback review is ready",
-    degradedBannerTitle: "A quick engine-based review is being shown",
+    readyToast: "Your review is ready",
+    degradedToast: "Quick review ready",
+    degradedBannerTitle: "Showing a quick engine review",
     degradedBannerDescription:
-      "The full AI Coach response did not arrive in time. This version is still grounded in the engine and your real moves, but you can retry later for a fuller explanation.",
+      "The full AI review didn't come back in time. What you see is based on your actual moves and engine scores. Try again later for a fuller analysis.",
     degradedReasonLabels: {
-      timeout: "Reason: the model took too long to answer.",
-      parse: "Reason: the model response was replaced with a safe fallback.",
-      auth: "Reason: the AI provider is temporarily unavailable.",
-      unknown: "Reason: the server returned a safe fallback.",
+      timeout: "The model was too slow to respond.",
+      parse: "The model's response couldn't be read.",
+      auth: "The AI provider is temporarily down.",
+      unknown: "Something went wrong on the server.",
     } satisfies Record<CoachAnalysisFailureReason, string>,
   }
 }
@@ -149,10 +149,16 @@ export function CoachAnalysisClient({
   gameId,
   language,
   initialAnalysis,
+  subscriptionTier,
+  monthlyCheckoutEnabled,
+  yearlyCheckoutEnabled,
 }: {
   gameId: string
   language: CoachLanguage
   initialAnalysis: CoachAnalysis | null
+  subscriptionTier: SubscriptionTier
+  monthlyCheckoutEnabled: boolean
+  yearlyCheckoutEnabled: boolean
 }) {
   const copy = useMemo(() => getCopy(language), [language])
   const progressToastId = useMemo(() => `coach-analysis:${gameId}:${language}`, [gameId, language])
@@ -169,7 +175,7 @@ export function CoachAnalysisClient({
   )
 
   useEffect(() => {
-    if (status !== "idle") {
+    if (initialAnalysis !== null && requestVersion === 0) {
       return
     }
 
@@ -260,7 +266,7 @@ export function CoachAnalysisClient({
           toast.info(copy.degradedToast, {
             id: progressToastId,
             description:
-              nextFailureReason === undefined
+              nextFailureReason == null
                 ? copy.degradedBannerDescription
                 : copy.degradedReasonLabels[nextFailureReason],
           })
@@ -292,7 +298,7 @@ export function CoachAnalysisClient({
         toast.dismiss(progressToastId)
       }
     }
-  }, [copy, gameId, language, progressToastId, requestVersion])
+  }, [copy, gameId, initialAnalysis, language, progressToastId, requestVersion])
 
   if (status === "loading" || status === "idle") {
     return (
@@ -344,6 +350,9 @@ export function CoachAnalysisClient({
             onOpenChange={setPaywallOpen}
             language={language}
             triggerReason={paywallReason}
+            currentTier={subscriptionTier}
+            monthlyCheckoutEnabled={monthlyCheckoutEnabled}
+            yearlyCheckoutEnabled={yearlyCheckoutEnabled}
           />
         ) : null}
       </>

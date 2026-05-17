@@ -21,6 +21,8 @@ interface PuzzleSolveClientProps {
   alreadySolved: boolean
   language: "ru" | "en"
   subscriptionTier: SubscriptionTier
+  monthlyCheckoutEnabled: boolean
+  yearlyCheckoutEnabled: boolean
   gameplayPreferences: GameplayPreferences
 }
 
@@ -33,6 +35,8 @@ export function PuzzleSolveClient({
   alreadySolved,
   language,
   subscriptionTier,
+  monthlyCheckoutEnabled,
+  yearlyCheckoutEnabled,
   gameplayPreferences,
 }: PuzzleSolveClientProps) {
   const [solved, setSolved] = useState(alreadySolved)
@@ -120,6 +124,8 @@ export function PuzzleSolveClient({
           language={language}
           triggerReason={paywallReason}
           currentTier={subscriptionTier}
+          monthlyCheckoutEnabled={monthlyCheckoutEnabled}
+          yearlyCheckoutEnabled={yearlyCheckoutEnabled}
         />
       ) : null}
     </div>

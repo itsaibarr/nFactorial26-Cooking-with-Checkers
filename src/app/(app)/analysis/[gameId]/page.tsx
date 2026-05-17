@@ -6,6 +6,7 @@ import {
   coachAnalysisSchema,
   coachLanguageSchema,
 } from "@/lib/coach/types"
+import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
 
 const storedGameSchema = z.object({
@@ -17,6 +18,7 @@ const storedGameSchema = z.object({
 
 const storedProfileSchema = z.object({
   language: coachLanguageSchema,
+  subscription_tier: z.enum(["free", "pro", "family"]),
 })
 
 const storedAnalysisSchema = z.object({
@@ -62,7 +64,7 @@ export default async function AnalysisPage({
 
   const {data: rawProfile} = await supabase
     .from("profiles")
-    .select("language")
+    .select("language, subscription_tier")
     .eq("id", user.id)
     .single()
 
@@ -74,6 +76,13 @@ export default async function AnalysisPage({
   const requestedLanguage = coachLanguageSchema.safeParse(lang).success
     ? coachLanguageSchema.parse(lang)
     : parsedProfile.data.language
+  const subscriptionTier =
+    parsedProfile.data.subscription_tier === "pro" ||
+    parsedProfile.data.subscription_tier === "family"
+      ? parsedProfile.data.subscription_tier
+      : "free"
+  const monthlyCheckoutEnabled = isStripePlanConfigured("monthly")
+  const yearlyCheckoutEnabled = isStripePlanConfigured("yearly")
 
   const {data: rawAnalysis} = await supabase
     .from("game_analyses")
@@ -108,6 +117,9 @@ export default async function AnalysisPage({
         gameId={parsedGame.data.id}
         language={requestedLanguage}
         initialAnalysis={initialAnalysis}
+        subscriptionTier={subscriptionTier}
+        monthlyCheckoutEnabled={monthlyCheckoutEnabled}
+        yearlyCheckoutEnabled={yearlyCheckoutEnabled}
       />
     </main>
   )

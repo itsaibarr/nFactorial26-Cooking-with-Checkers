@@ -112,7 +112,7 @@ export default async function SettingsPage({
       <Card>
         <CardHeader>
           <CardTitle>{profile?.display_name ?? user.email}</CardTitle>
-          <CardDescription>Базовая информация о вашем профиле Sharpki.</CardDescription>
+          <CardDescription>Ваш профиль Sharpki.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <Badge variant="outline">Email: {user.email ?? "—"}</Badge>
@@ -125,7 +125,7 @@ export default async function SettingsPage({
         <CardHeader>
           <CardTitle>Подписка</CardTitle>
           <CardDescription>
-            Stripe синхронизирует статус автоматически через webhook.
+            Управление тарифом и оплатой.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

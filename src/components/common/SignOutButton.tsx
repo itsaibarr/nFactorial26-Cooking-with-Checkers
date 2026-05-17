@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { posthog } from "@/lib/posthog/client";
 import { createClient } from "@/lib/supabase/client";
 
-export function SignOutButton() {
+export function SignOutButton({ label = "Выйти" }: { label?: string }) {
   const router = useRouter();
 
   async function handleSignOut() {
@@ -30,7 +30,7 @@ export function SignOutButton() {
 
   return (
     <Button variant="outline" onClick={handleSignOut}>
-      Выйти
+      {label}
     </Button>
   );
 }
