@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { captureServerEvent, captureServerException } from "@/lib/posthog/server"
+import { FREE_DAILY_TASK_LIMIT } from "@/lib/puzzles/daily"
 import { releaseRateLimitSlot, reserveRateLimitSlot } from "@/lib/rate-limit"
 import { advanceStreak, getTodayDateString } from "@/lib/streak/advance"
 import { createClient } from "@/lib/supabase/server"
@@ -28,8 +29,8 @@ function getPuzzleRateLimitMessage({
 }) {
   if (showPaywall) {
     return language === "ru"
-      ? "Вы уже выполнили 3 бесплатные задачи на сегодня."
-      : "You have already completed 3 free daily tasks today."
+      ? `Вы уже выполнили ${FREE_DAILY_TASK_LIMIT} бесплатных ежедневных задания сегодня.`
+      : `You have already completed ${FREE_DAILY_TASK_LIMIT} free daily tasks today.`
   }
 
   return language === "ru"

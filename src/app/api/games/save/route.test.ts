@@ -32,6 +32,13 @@ type RateLimitRow = {
   window_start: string
 }
 
+function matchesFilters(
+  row: Record<string, unknown>,
+  filters: Record<string, unknown>,
+) {
+  return Object.entries(filters).every(([key, value]) => row[key] === value)
+}
+
 function createRateLimitRpcMock(
   rateLimitRows: RateLimitRow[],
   insertedRateLimits: RateLimitRow[],
@@ -104,12 +111,14 @@ function createMockSupabase({
   profileLanguage = "ru",
   subscriptionTier = "free",
   rateLimits = [],
+  gameUpdateError = null,
 }: {
   playerColor?: "white" | "black"
   profileSharpness?: number
   profileLanguage?: "ru" | "en"
   subscriptionTier?: "free" | "pro" | "family"
   rateLimits?: RateLimitRow[]
+  gameUpdateError?: {message: string} | null
 } = {}) {
   const gameUpdates: Array<Record<string, unknown>> = []
   const profileUpdates: Array<Record<string, unknown>> = []
@@ -150,7 +159,7 @@ function createMockSupabase({
 
   const gamesUpdateChain = {
     eq: vi.fn().mockReturnThis(),
-    error: null,
+    error: gameUpdateError,
   }
 
   const profilesUpdateChain = {
@@ -193,12 +202,81 @@ function createMockSupabase({
         return profilesTable
       }
 
+      if (table === "rate_limits") {
+        return {
+          select: vi.fn(() => {
+            const filters: Record<string, unknown> = {}
+
+            return {
+              eq(key: string, value: unknown) {
+                filters[key] = value
+                return this
+              },
+              async maybeSingle() {
+                const row = rateLimitRows.find((candidate) =>
+                  matchesFilters(candidate, filters),
+                )
+
+                return {
+                  data: row ? {count: row.count} : null,
+                  error: null,
+                }
+              },
+            }
+          }),
+          update: vi.fn((values: {count?: number}) => {
+            const filters: Record<string, unknown> = {}
+
+            return {
+              eq(key: string, value: unknown) {
+                filters[key] = value
+
+                if (Object.keys(filters).length < 3) {
+                  return this
+                }
+
+                const row = rateLimitRows.find((candidate) =>
+                  matchesFilters(candidate, filters),
+                )
+                if (row && typeof values.count === "number") {
+                  row.count = values.count
+                }
+
+                return Promise.resolve({error: null})
+              },
+            }
+          }),
+          delete: vi.fn(() => {
+            const filters: Record<string, unknown> = {}
+
+            return {
+              eq(key: string, value: unknown) {
+                filters[key] = value
+
+                if (Object.keys(filters).length < 3) {
+                  return this
+                }
+
+                const rowIndex = rateLimitRows.findIndex((candidate) =>
+                  matchesFilters(candidate, filters),
+                )
+                if (rowIndex >= 0) {
+                  rateLimitRows.splice(rowIndex, 1)
+                }
+
+                return Promise.resolve({error: null})
+              },
+            }
+          }),
+        }
+      }
+
       throw new Error(`Unexpected table: ${table}`)
     }),
     rpc: createRateLimitRpcMock(rateLimitRows, insertedRateLimits),
   }
 
-  return {supabase, gameUpdates, profileUpdates, insertedRateLimits}
+  return {supabase, gameUpdates, profileUpdates, insertedRateLimits, rateLimitRows}
 }
 
 describe("POST /api/games/save", () => {
@@ -367,5 +445,48 @@ describe("POST /api/games/save", () => {
     })
     expect(gameUpdates).toHaveLength(0)
     expect(profileUpdates).toHaveLength(0)
+  })
+
+  it("releases a reserved slot when the game cannot be persisted", async () => {
+    const {supabase, insertedRateLimits, rateLimitRows, gameUpdates} = createMockSupabase({
+      gameUpdateError: {message: "write failed"},
+    })
+    createClientMock.mockResolvedValue(supabase)
+
+    const response = await POST(
+      new Request("http://localhost/api/games/save", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          gameId: GAME_ID,
+          moves: [
+            {notation: "c3-b4", durationMs: 1_200},
+            {notation: "f6-g5", durationMs: null},
+            {notation: "b4-a5", durationMs: 900},
+          ],
+          termination: "resignation",
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toEqual({
+      error: "Failed to save game",
+    })
+    expect(gameUpdates).toHaveLength(1)
+    expect(insertedRateLimits).toHaveLength(1)
+    expect(rateLimitRows).toHaveLength(0)
+    expect(captureServerExceptionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "write failed",
+      }),
+      USER_ID,
+      expect.objectContaining({
+        stage: "save_game",
+        game_id: GAME_ID,
+      }),
+    )
   })
 })

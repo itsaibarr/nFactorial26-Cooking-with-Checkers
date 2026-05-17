@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { coachAnalysisSchema, type CoachGameContext } from "@/lib/coach/types"
+import { coachAnalysisSchema } from "@/lib/coach/types"
 
 const {
   createClientMock,
@@ -139,10 +139,12 @@ function createMockSupabase({
   analyses = [],
   rateLimits = [],
   subscriptionTier = "free",
+  analysisUpsertError = null,
 }: {
   analyses?: Array<Record<string, unknown>>
   rateLimits?: RateLimitRow[]
   subscriptionTier?: "free" | "pro" | "family"
+  analysisUpsertError?: {message: string} | null
 } = {}) {
   const games = [
     {
@@ -219,6 +221,11 @@ function createMockSupabase({
           select: vi.fn(() => createSelectChain(analysisRows)),
           upsert: vi.fn((values: Record<string, unknown>) => {
             upsertedAnalyses.push(values)
+
+            if (analysisUpsertError) {
+              return Promise.resolve({error: analysisUpsertError})
+            }
+
             const existing = analysisRows.find(
               (row) =>
                 row.game_id === values.game_id && row.language === values.language,
@@ -338,26 +345,17 @@ describe("POST /api/coach/analyze", () => {
       encouragement: "Вы хорошо начали партию и не испугались осложнений.",
     }
 
-    getCoachAnalysisMock.mockImplementation(
-      async (context: CoachGameContext) => ({
-        analysis: {
-          ...freshAnalysis,
-          sharpness_score_for_this_game: context.sharpnessScore,
-          highlights: [
-            {
-              ...freshAnalysis.highlights[0],
-              move_number: context.criticalMoments[0]?.move_number ?? 1,
-            },
-          ],
-        },
-        model: "accounts/fireworks/models/qwen3p6-plus",
-        tokensIn: 1500,
-        tokensOut: 420,
-        costUsd: 0.00239,
-        degraded: false,
-        failureReason: null,
-      }),
-    )
+    getCoachAnalysisMock.mockResolvedValue({
+      analysis: {
+        ...freshAnalysis,
+      },
+      model: "accounts/fireworks/models/qwen3p6-plus",
+      tokensIn: 1500,
+      tokensOut: 420,
+      costUsd: 0.00239,
+      degraded: false,
+      failureReason: null,
+    })
 
     const response = await POST(
       new Request("http://localhost/api/coach/analyze", {
@@ -401,6 +399,66 @@ describe("POST /api/coach/analyze", () => {
           tokens_out: 420,
           cost_usd: 0.00239,
         }),
+      }),
+    )
+  })
+
+  it("releases a reserved slot when persisting the analysis fails", async () => {
+    const {supabase, insertedRateLimits, rateLimitRows, upsertedAnalyses} = createMockSupabase({
+      analysisUpsertError: {message: "write failed"},
+    })
+    createClientMock.mockResolvedValue(supabase)
+
+    getCoachAnalysisMock.mockResolvedValue({
+      analysis: {
+        overall_quality: "good",
+        sharpness_score_for_this_game: 81,
+        highlights: [
+          {
+            move_number: 2,
+            type: "good_idea",
+            what_you_did: "Вы нашли активный ход.",
+            what_to_consider: "После него стоило удержать темп.",
+          },
+        ],
+        key_lesson: "Сохраняйте инициативу после сильного первого решения.",
+        encouragement: "Идея позиции была верной, даже если запись не сохранилась.",
+      },
+      model: "accounts/fireworks/models/qwen3p6-plus",
+      tokensIn: 1100,
+      tokensOut: 280,
+      costUsd: 0.00194,
+      degraded: false,
+      failureReason: null,
+    })
+
+    const response = await POST(
+      new Request("http://localhost/api/coach/analyze", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          gameId: GAME_ID,
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toEqual({
+      error: "Failed to analyze game",
+    })
+    expect(insertedRateLimits).toHaveLength(1)
+    expect(upsertedAnalyses).toHaveLength(1)
+    expect(rateLimitRows).toHaveLength(0)
+    expect(captureServerExceptionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "write failed",
+      }),
+      USER_ID,
+      expect.objectContaining({
+        stage: "coach_analyze",
+        game_id: GAME_ID,
       }),
     )
   })

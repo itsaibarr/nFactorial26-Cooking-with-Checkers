@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const {
   createClientMock,
   captureServerEventMock,
+  captureServerExceptionMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   captureServerEventMock: vi.fn().mockResolvedValue(undefined),
+  captureServerExceptionMock: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -14,6 +16,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/posthog/server", () => ({
   captureServerEvent: captureServerEventMock,
+  captureServerException: captureServerExceptionMock,
 }))
 
 import { POST } from "@/app/api/puzzles/attempt/route"
@@ -26,6 +29,13 @@ type RateLimitRow = {
   action: string
   count: number
   window_start: string
+}
+
+function matchesFilters(
+  row: Record<string, unknown>,
+  filters: Record<string, unknown>,
+) {
+  return Object.entries(filters).every(([key, value]) => row[key] === value)
 }
 
 function createRateLimitRpcMock(
@@ -103,10 +113,14 @@ function createMockSupabase({
   profileLanguage = "ru",
   subscriptionTier = "free",
   rateLimits = [],
+  attemptUpsertError = null,
+  profileUpdateError = null,
 }: {
   profileLanguage?: "ru" | "en"
   subscriptionTier?: "free" | "pro" | "family"
   rateLimits?: RateLimitRow[]
+  attemptUpsertError?: {message: string} | null
+  profileUpdateError?: {message: string} | null
 } = {}) {
   const attemptUpserts: Array<Record<string, unknown>> = []
   const profileUpdates: Array<Record<string, unknown>> = []
@@ -130,7 +144,7 @@ function createMockSupabase({
       profileUpdates.push(values)
 
       return {
-        eq: vi.fn().mockResolvedValue({error: null}),
+        eq: vi.fn().mockResolvedValue({error: profileUpdateError}),
       }
     }),
   }
@@ -138,7 +152,7 @@ function createMockSupabase({
   const puzzleAttemptsTable = {
     upsert: vi.fn((values: Record<string, unknown>) => {
       attemptUpserts.push(values)
-      return Promise.resolve({error: null})
+      return Promise.resolve({error: attemptUpsertError})
     }),
   }
 
@@ -161,12 +175,81 @@ function createMockSupabase({
         return puzzleAttemptsTable
       }
 
+      if (table === "rate_limits") {
+        return {
+          select: vi.fn(() => {
+            const filters: Record<string, unknown> = {}
+
+            return {
+              eq(key: string, value: unknown) {
+                filters[key] = value
+                return this
+              },
+              async maybeSingle() {
+                const row = rateLimitRows.find((candidate) =>
+                  matchesFilters(candidate, filters),
+                )
+
+                return {
+                  data: row ? {count: row.count} : null,
+                  error: null,
+                }
+              },
+            }
+          }),
+          update: vi.fn((values: {count?: number}) => {
+            const filters: Record<string, unknown> = {}
+
+            return {
+              eq(key: string, value: unknown) {
+                filters[key] = value
+
+                if (Object.keys(filters).length < 3) {
+                  return this
+                }
+
+                const row = rateLimitRows.find((candidate) =>
+                  matchesFilters(candidate, filters),
+                )
+                if (row && typeof values.count === "number") {
+                  row.count = values.count
+                }
+
+                return Promise.resolve({error: null})
+              },
+            }
+          }),
+          delete: vi.fn(() => {
+            const filters: Record<string, unknown> = {}
+
+            return {
+              eq(key: string, value: unknown) {
+                filters[key] = value
+
+                if (Object.keys(filters).length < 3) {
+                  return this
+                }
+
+                const rowIndex = rateLimitRows.findIndex((candidate) =>
+                  matchesFilters(candidate, filters),
+                )
+                if (rowIndex >= 0) {
+                  rateLimitRows.splice(rowIndex, 1)
+                }
+
+                return Promise.resolve({error: null})
+              },
+            }
+          }),
+        }
+      }
+
       throw new Error(`Unexpected table: ${table}`)
     }),
     rpc: createRateLimitRpcMock(rateLimitRows, insertedRateLimits),
   }
 
-  return {supabase, attemptUpserts, profileUpdates, insertedRateLimits}
+  return {supabase, attemptUpserts, profileUpdates, insertedRateLimits, rateLimitRows}
 }
 
 describe("POST /api/puzzles/attempt", () => {
@@ -227,14 +310,14 @@ describe("POST /api/puzzles/attempt", () => {
     vi.useRealTimers()
   })
 
-  it("returns 429 when the free puzzle limit is already exhausted", async () => {
+  it("returns 429 when the free daily task limit is already exhausted", async () => {
     const {supabase, attemptUpserts, profileUpdates, insertedRateLimits} = createMockSupabase({
       profileLanguage: "en",
       rateLimits: [
         {
           user_id: USER_ID,
           action: "puzzle",
-          count: 1,
+          count: 3,
           window_start: new Date(
             Date.UTC(2026, 4, 17, 0, 0, 0, 0),
           ).toISOString(),
@@ -263,9 +346,9 @@ describe("POST /api/puzzles/attempt", () => {
 
     expect(response.status).toBe(429)
     await expect(response.json()).resolves.toEqual({
-      error: "You have already used today's free puzzle limit.",
+      error: "You have already completed 3 free daily tasks today.",
       triggerReason: "puzzle_limit",
-      limit: 1,
+      limit: 3,
       showPaywall: true,
     })
     expect(attemptUpserts).toHaveLength(0)
@@ -274,5 +357,45 @@ describe("POST /api/puzzles/attempt", () => {
     expect(captureServerEventMock).not.toHaveBeenCalled()
 
     vi.useRealTimers()
+  })
+
+  it("releases a reserved slot when the solved attempt cannot be recorded", async () => {
+    const {supabase, attemptUpserts, insertedRateLimits, rateLimitRows} = createMockSupabase({
+      attemptUpsertError: {message: "write failed"},
+    })
+    createClientMock.mockResolvedValue(supabase)
+
+    const response = await POST(
+      new Request("http://localhost/api/puzzles/attempt", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          puzzleId: PUZZLE_ID,
+          solved: true,
+          timeTakenSeconds: 42,
+          attemptsUsed: 2,
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toEqual({
+      error: "Failed to record attempt",
+    })
+    expect(attemptUpserts).toHaveLength(1)
+    expect(insertedRateLimits).toHaveLength(1)
+    expect(rateLimitRows).toHaveLength(0)
+    expect(captureServerExceptionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "write failed",
+      }),
+      USER_ID,
+      expect.objectContaining({
+        stage: "puzzle_attempt",
+        puzzle_id: PUZZLE_ID,
+      }),
+    )
   })
 })

@@ -127,6 +127,9 @@ export async function POST(request: Request) {
   const {
     data: {user},
   } = await supabase.auth.getUser()
+  let reservedRateLimit: {
+    subscriptionTier: z.infer<typeof storedProfileSchema>["subscription_tier"]
+  } | null = null
 
   if (!user) {
     return NextResponse.json({error: "Unauthorized"}, {status: 401})
@@ -228,6 +231,10 @@ export async function POST(request: Request) {
       )
     }
 
+    reservedRateLimit = {
+      subscriptionTier: parsedProfile.data.subscription_tier,
+    }
+
     const coachContext = getCoachContext({
       game: parsedGame.data,
       profile: parsedProfile.data,
@@ -251,6 +258,7 @@ export async function POST(request: Request) {
         action: "ai_analysis",
         subscriptionTier: parsedProfile.data.subscription_tier,
       }).catch(() => undefined)
+      reservedRateLimit = null
     }
 
     const {error: upsertError} = await supabase.from("game_analyses").upsert(
@@ -303,9 +311,20 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ...analysisResult.analysis,
       degraded: analysisResult.degraded,
-      failureReason: analysisResult.failureReason,
+      ...(analysisResult.failureReason === null
+        ? {}
+        : {failureReason: analysisResult.failureReason}),
     })
   } catch (error) {
+    if (reservedRateLimit) {
+      await releaseRateLimitSlot({
+        supabase,
+        userId: user.id,
+        action: "ai_analysis",
+        subscriptionTier: reservedRateLimit.subscriptionTier,
+      }).catch(() => undefined)
+    }
+
     await captureServerException(error, user.id, {
       stage: "coach_analyze",
       game_id: parsedBody.data.gameId,

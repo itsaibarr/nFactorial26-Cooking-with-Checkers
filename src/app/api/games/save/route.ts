@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { captureServerEvent, captureServerException } from "@/lib/posthog/server"
 import { getPlayerGameResult, recordedMoveInputListSchema, replayRecordedGame } from "@/lib/game/session"
-import { reserveRateLimitSlot } from "@/lib/rate-limit"
+import { releaseRateLimitSlot, reserveRateLimitSlot } from "@/lib/rate-limit"
 import {
   computeGameSharpness,
   sharpnessBreakdownSchema,
@@ -61,6 +61,10 @@ export async function POST(request: Request) {
   const {
     data: {user},
   } = await supabase.auth.getUser()
+  let reservedRateLimit: {
+    subscriptionTier: z.infer<typeof storedProfileSchema>["subscription_tier"]
+  } | null = null
+  let gamePersisted = false
 
   if (!user) {
     return NextResponse.json({error: "Unauthorized"}, {status: 401})
@@ -164,6 +168,10 @@ export async function POST(request: Request) {
       )
     }
 
+    reservedRateLimit = {
+      subscriptionTier: parsedProfile.data.subscription_tier,
+    }
+
     const nextSharpness = updateSharpnessEma(parsedProfile.data.current_sharpness, sharpness.score)
     const today = getTodayDateString()
     const streakResult = advanceStreak({
@@ -209,6 +217,8 @@ export async function POST(request: Request) {
       throw updateGameError
     }
 
+    gamePersisted = true
+
     const {error: updateProfileError} = await supabase
       .from("profiles")
       .update(
@@ -249,6 +259,15 @@ export async function POST(request: Request) {
       streakDays: streakResult.newStreakDays,
     })
   } catch (error) {
+    if (reservedRateLimit && !gamePersisted) {
+      await releaseRateLimitSlot({
+        supabase,
+        userId: user.id,
+        action: "game",
+        subscriptionTier: reservedRateLimit.subscriptionTier,
+      }).catch(() => undefined)
+    }
+
     await captureServerException(error, user.id, {
       stage: "save_game",
       game_id: parsedBody.data.gameId,

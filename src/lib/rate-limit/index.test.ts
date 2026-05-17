@@ -7,7 +7,7 @@ import {
 } from "@/lib/rate-limit"
 
 describe("rate-limit helpers", () => {
-  it("uses a daily window for free analysis and free games", () => {
+  it("uses a daily window for free analysis, games, and daily tasks", () => {
     const now = new Date("2026-05-17T14:23:41.000Z")
 
     expect(getRateLimitPolicy("free", "ai_analysis")).toEqual({
@@ -18,12 +18,17 @@ describe("rate-limit helpers", () => {
       limit: 5,
       window: "day",
     })
+    expect(getRateLimitPolicy("free", "puzzle")).toEqual({
+      limit: 3,
+      window: "day",
+    })
     expect(getRateLimitWindowStart("free", "ai_analysis", now)).toBe(
       "2026-05-17T00:00:00.000Z",
     )
     expect(getRateLimitWindowStart("free", "game", now)).toBe(
       "2026-05-17T00:00:00.000Z",
     )
+    expect(getRateLimitWindowStart("free", "puzzle", now)).toBe("2026-05-17T00:00:00.000Z")
   })
 
   it("uses an hourly window for paid analysis", () => {
