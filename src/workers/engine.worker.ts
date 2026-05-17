@@ -9,17 +9,31 @@ export interface EngineWorkerRequest {
 
 export interface EngineWorkerResponse {
   readonly id: string
-  readonly move: Move
+  readonly move: Move | null
+  readonly error: string | null
 }
 
 self.onmessage = (event: MessageEvent<EngineWorkerRequest>) => {
-  const {id, state, level} = event.data
-  const move = getBestMove(state, level)
+  try {
+    const {id, state, level} = event.data
+    const move = getBestMove(state, level)
 
-  const payload: EngineWorkerResponse = {
-    id,
-    move,
+    const payload: EngineWorkerResponse = {
+      id,
+      move,
+      error: null,
+    }
+
+    self.postMessage(payload)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown engine worker error"
+
+    const payload: EngineWorkerResponse = {
+      id: event.data.id,
+      move: null,
+      error: message,
+    }
+
+    self.postMessage(payload)
   }
-
-  self.postMessage(payload)
 }
