@@ -46,7 +46,9 @@
       "Exec(grep)",
       "Exec(xargs grep)",
       "Exec(tail)",
-      "Exec(mv)"
+      "Exec(mv)",
+      "Exec(./node_modules/.bin/eslint)",
+      "Exec(wc)"
     ]
   }
 }
