@@ -138,10 +138,21 @@ export async function POST(request: Request) {
 
     return NextResponse.json({url: session.url})
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("[stripe/checkout] error:", message, error)
+
     await captureServerException(error, user.id, {
       stage: "stripe_checkout",
     }).catch(() => undefined)
 
-    return NextResponse.json({error: "Failed to start checkout"}, {status: 500})
+    return NextResponse.json(
+      {
+        error:
+          process.env.NODE_ENV === "production"
+            ? "Failed to start checkout"
+            : message,
+      },
+      {status: 500},
+    )
   }
 }
