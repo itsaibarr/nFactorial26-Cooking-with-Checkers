@@ -139,14 +139,14 @@ export default async function PricingPage({
                     disabled={!checkoutReady}
                     variant={planItem.plan === "yearly" ? "outline" : "default"}
                   >
-                    {checkoutReady ? "Открыть Stripe Checkout" : "Добавьте price ID"}
+                    {checkoutReady ? "Оформить подписку" : "Добавьте price ID"}
                   </PricingCheckoutButton>
                 )}
 
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>• AI-разборы без бесплатного дневного лимита</p>
-                  <p>• Быстрый возврат в игру после оплаты</p>
-                  <p>• Управление картой и отменой через Stripe Portal</p>
+                  <p>• AI-разборы без дневного лимита</p>
+                  <p>• Подписка активируется сразу после оплаты</p>
+                  <p>• Отмена в любой момент</p>
                 </div>
               </CardContent>
             </Card>
