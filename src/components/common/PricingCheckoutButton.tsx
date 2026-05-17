@@ -53,7 +53,14 @@ export function PricingCheckoutButton({
         | null
 
       if (!response.ok || !payload?.url) {
-        throw new Error(payload?.error ?? "Checkout failed")
+        const errorMessage = payload?.error
+
+        if (errorMessage?.includes("already have an active plan")) {
+          toast.error(errorMessage)
+          return
+        }
+
+        throw new Error(errorMessage || "Checkout failed")
       }
 
       window.location.assign(payload.url)
@@ -61,7 +68,7 @@ export function PricingCheckoutButton({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Не удалось открыть Stripe Checkout.",
+          : "Checkout unavailable. Please try again.",
       )
       setLoading(false)
     }
@@ -76,7 +83,7 @@ export function PricingCheckoutButton({
       onClick={handleCheckout}
       aria-label={`Start ${PLAN_LABELS[plan]} checkout`}
     >
-      {loading ? "Открываем Stripe…" : children}
+      {loading ? "Opening checkout…" : children}
     </Button>
   )
 }

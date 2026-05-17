@@ -10,6 +10,14 @@
       "none": "Нет серии",
       "days": "{count, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
     },
+    "subscription": {
+      "free": "Бесплатный",
+      "pro": "Pro",
+      "family": "Семейный",
+      "upgradeCta": "Открыть Pro",
+      "upgradeDescription": "Безлимитные AI-разборы и задачи.",
+      "manageCta": "Управлять подпиской"
+    },
     "recentGames": {
       "title": "Последние партии",
       "description": "Ваши завершённые партии.",
@@ -42,5 +50,11 @@
       "gameCount": "{count, plural, one {# партия} few {# партии} many {# партий} other {# партии}}",
       "puzzleCount": "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}"
     }
+  },
+  "payment": {
+    "checkoutError": "Не удалось открыть страницу оплаты.",
+    "alreadySubscribed": "У вас уже есть подписка. Управляйте ей в настройках.",
+    "portalError": "Не удалось открыть кабинет подписки.",
+    "upgradeSuccess": "Оплата получена! Если статус не обновился сразу, обновите страницу через пару секунд."
   }
 }

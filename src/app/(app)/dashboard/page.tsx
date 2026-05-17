@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { DashboardActivityHeatmap } from "@/components/common/DashboardActivityHeatmap"
 import { DashboardUpgradeToast } from "@/components/common/DashboardUpgradeToast"
 import { DashboardAnalytics } from "@/components/common/DashboardAnalytics"
+import { PortalManageButton } from "@/components/common/PortalManageButton"
 import { SharpnessGauge } from "@/components/common/SharpnessGauge"
 import { SignOutButton } from "@/components/common/SignOutButton"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +20,8 @@ import {
   getDashboardActivityRange,
 } from "@/lib/dashboard/activity-heatmap"
 import { getAppTranslator, getDateTimeLocale, resolveAppLocale, type AppLocale } from "@/lib/i18n"
+import type { SubscriptionTier } from "@/lib/rate-limit"
+import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
 
 function renderStreakBadge(days: number, locale: AppLocale) {
@@ -71,6 +74,26 @@ function getOpponentLevelLabel(level: string, locale: AppLocale) {
   }
 }
 
+function renderSubscriptionBadge(tier: SubscriptionTier, locale: AppLocale) {
+  const {t} = getAppTranslator(locale)
+  const key = tier === "family" ? "family" : tier === "pro" ? "pro" : "free"
+  const label = t(`dashboard.subscription.${key}`)
+
+  if (tier === "pro" || tier === "family") {
+    return (
+      <Badge className="gap-1 bg-primary text-primary-foreground hover:bg-primary">
+        {label}
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge variant="outline" className="gap-1 text-muted-foreground">
+      {label}
+    </Badge>
+  )
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const {
@@ -87,7 +110,7 @@ export default async function DashboardPage() {
     await Promise.all([
       supabase
         .from("profiles")
-        .select("id, display_name, current_sharpness, streak_days, language")
+        .select("id, display_name, current_sharpness, streak_days, language, subscription_tier, stripe_customer_id")
         .eq("id", user.id)
         .single(),
       supabase
@@ -113,6 +136,13 @@ export default async function DashboardPage() {
 
   const locale = resolveAppLocale(profile?.language)
   const {t} = getAppTranslator(locale)
+  const subscriptionTier: SubscriptionTier =
+    profile?.subscription_tier === "pro" || profile?.subscription_tier === "family"
+      ? profile.subscription_tier
+      : "free"
+  const monthlyCheckoutEnabled = isStripePlanConfigured("monthly")
+  const yearlyCheckoutEnabled = isStripePlanConfigured("yearly")
+  const checkoutEnabled = monthlyCheckoutEnabled || yearlyCheckoutEnabled
 
   const activityHeatmap = buildDashboardActivityHeatmap({
     endDate: activityRange.endDate,
@@ -130,6 +160,7 @@ export default async function DashboardPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Sharpki</h1>
         <div className="flex items-center gap-2">
+          {renderSubscriptionBadge(subscriptionTier, locale)}
           <Button asChild variant="ghost" size="sm">
             <Link href="/settings">{t("dashboard.settings")}</Link>
           </Button>
@@ -160,6 +191,34 @@ export default async function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {subscriptionTier === "free" && checkoutEnabled ? (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium">{t("dashboard.subscription.upgradeCta")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("dashboard.subscription.upgradeDescription")}
+              </p>
+            </div>
+            <Button asChild size="sm">
+              <Link href="/pricing">{t("dashboard.subscription.upgradeCta")}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : subscriptionTier !== "free" && profile?.stripe_customer_id ? (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium">{renderSubscriptionBadge(subscriptionTier, locale)}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("dashboard.subscription.manageCta")}
+              </p>
+            </div>
+            <PortalManageButton />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <DashboardActivityHeatmap data={activityHeatmap} locale={locale} />
 

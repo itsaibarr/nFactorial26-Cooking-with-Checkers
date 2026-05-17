@@ -35,7 +35,7 @@ export function PortalManageButton({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Не удалось открыть кабинет подписки.",
+          : "Could not open the billing portal.",
       )
       setLoading(false)
     }
@@ -50,7 +50,7 @@ export function PortalManageButton({
       onClick={handleOpenPortal}
       aria-label="Open Stripe billing portal"
     >
-      {loading ? "Открываем портал…" : "Управлять подпиской"}
+      {loading ? "Opening portal…" : "Manage subscription"}
     </Button>
   )
 }

@@ -19,7 +19,7 @@ export function DashboardUpgradeToast() {
     params.delete("plan")
 
     toast.success(
-      "Оплата получена. Если статус не обновился сразу, обновите страницу через пару секунд.",
+      "Payment received! If the status hasn't updated yet, refresh the page in a few seconds.",
     )
 
     router.replace(params.size > 0 ? `${pathname}?${params.toString()}` : pathname)

@@ -10,6 +10,14 @@
       "none": "No streak",
       "days": "{count, plural, one {# day} other {# days}}"
     },
+    "subscription": {
+      "free": "Free",
+      "pro": "Pro",
+      "family": "Family",
+      "upgradeCta": "Upgrade to Pro",
+      "upgradeDescription": "Unlimited AI reviews and puzzles.",
+      "manageCta": "Manage subscription"
+    },
     "recentGames": {
       "title": "Recent games",
       "description": "Your completed games.",
@@ -42,5 +50,11 @@
       "gameCount": "{count, plural, one {# game} other {# games}}",
       "puzzleCount": "{count, plural, one {# puzzle} other {# puzzles}}"
     }
+  },
+  "payment": {
+    "checkoutError": "Could not open the checkout page.",
+    "alreadySubscribed": "You already have a subscription. Manage it in settings.",
+    "portalError": "Could not open the billing portal.",
+    "upgradeSuccess": "Payment received! If the status hasn't updated yet, refresh the page in a few seconds."
   }
 }
