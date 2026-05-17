@@ -1,10 +1,10 @@
 "use client";
 
 import posthog from "posthog-js";
+import { getPostHogUiHost } from "@/lib/posthog/shared";
 
 /**
- * Initialize the PostHog browser SDK once. Idempotent.
- * Phase 1 only sets up identify-on-auth — `posthog.capture` calls land in Phase 8.
+ * Initialize the PostHog browser SDK once as a fallback for auth-driven client sync.
  */
 export function initPostHog() {
   if (typeof window === "undefined") return;
@@ -14,9 +14,11 @@ export function initPostHog() {
   if (!key) return; // env not configured yet (e.g. local dev without keys); silently no-op
 
   posthog.init(key, {
-    api_host:
-      process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com",
-    capture_pageview: false,
+    api_host: "/ingest",
+    ui_host: getPostHogUiHost(),
+    defaults: "2026-01-30",
+    capture_pageview: "history_change",
+    capture_exceptions: true,
     person_profiles: "identified_only",
   });
 }
