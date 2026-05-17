@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { posthog } from "@/lib/posthog/client";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignOutButton() {
@@ -9,7 +10,20 @@ export function SignOutButton() {
 
   async function handleSignOut() {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      if (posthog.__loaded) {
+        posthog.captureException(error, { stage: "sign_out" });
+      }
+
+      return;
+    }
+
+    if (posthog.__loaded) {
+      posthog.capture("logout");
+    }
+
     router.push("/");
     router.refresh();
   }
