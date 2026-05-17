@@ -92,6 +92,9 @@ export function GameResultModal({
   sharpnessScore,
   sharpnessBreakdown,
   endReason,
+  saveErrorMessage,
+  showPaywall,
+  onOpenPaywall,
   onRetrySave,
 }: {
   gameId: string
@@ -99,10 +102,13 @@ export function GameResultModal({
   onOpenChange: (open: boolean) => void
   playerColor: PieceColor
   result: GameResult | null
-  saveStatus: "idle" | "saving" | "saved" | "error"
+  saveStatus: "idle" | "saving" | "saved" | "error" | "rate_limited"
   sharpnessScore: number | null
   sharpnessBreakdown: SharpnessBreakdown | null
   endReason: string | null
+  saveErrorMessage: string | null
+  showPaywall: boolean
+  onOpenPaywall: () => void
   onRetrySave: () => void
 }) {
   if (!result) {
@@ -111,7 +117,7 @@ export function GameResultModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden">
+      <DialogContent className="overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{getHeadline(result)}</DialogTitle>
           <DialogDescription>{getDescription(result, playerColor)}</DialogDescription>
@@ -151,12 +157,17 @@ export function GameResultModal({
           ) : null}
           {saveStatus === "error" ? (
             <p className="text-sm text-destructive">
-              Не удалось сохранить партию. Нажмите «Повторить сохранение».
+              {saveErrorMessage ?? "Не удалось сохранить партию. Нажмите «Повторить сохранение»."}
+            </p>
+          ) : null}
+          {saveStatus === "rate_limited" ? (
+            <p className="text-sm text-destructive">
+              {saveErrorMessage ?? "Лимит партий для текущего периода исчерпан."}
             </p>
           ) : null}
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 sm:flex-wrap sm:justify-start">
           {saveStatus === "saved" ? (
             <Button asChild>
               <Link href={`/analysis/${gameId}`}>Получить AI-разбор</Link>
@@ -166,6 +177,9 @@ export function GameResultModal({
           )}
           {saveStatus === "error" ? (
             <Button onClick={onRetrySave}>Повторить сохранение</Button>
+          ) : null}
+          {saveStatus === "rate_limited" && showPaywall ? (
+            <Button onClick={onOpenPaywall}>Открыть Pro</Button>
           ) : null}
           <Button asChild variant="outline">
             <Link href="/play">Сыграть ещё</Link>

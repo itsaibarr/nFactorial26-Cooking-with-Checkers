@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { z } from "zod"
+import { PaywallModal } from "@/components/PaywallModal"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Board } from "@/components/board/Board"
 import { GameControls } from "@/components/game/GameControls"
@@ -15,10 +16,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { getBestMove, getLegalMoves } from "@/lib/engine/engine"
+import { indexToSquare } from "@/lib/engine/board"
+import { getLegalMoves } from "@/lib/engine/engine"
 import type { DifficultyLevel, GameState, Move, PieceColor } from "@/lib/engine/types"
+import { resolveBotMove } from "@/lib/game/bot"
+import {
+  findMoveMatchingPath,
+  getCapturePathNextSquares,
+} from "@/lib/game/capture-selection"
+import type { GameplayPreferences } from "@/lib/game/preferences"
+import {
+  buildPreparedMoveAnimation,
+  getMoveAnimationDuration,
+  type ActiveMoveAnimation,
+} from "@/lib/game/move-animation"
+import { resolveRecommendedMove } from "@/lib/game/recommendation"
 import { getPlayerGameResult, type RecordedMove } from "@/lib/game/session"
 import { useGameSessionStore } from "@/lib/game/store"
+import type { PaywallTriggerReason, SubscriptionTier } from "@/lib/rate-limit"
 import { sharpnessBreakdownSchema, type SharpnessBreakdown } from "@/lib/sharpness/compute"
 import type { EngineWorkerRequest, EngineWorkerResponse } from "@/workers/engine.worker"
 
@@ -37,12 +52,25 @@ const persistedGameSnapshotSchema = z.object({
   sharpnessScore: z.number().int().min(0).max(100).nullable(),
   sharpnessBreakdown: sharpnessBreakdownSchema.nullable(),
 })
+const rateLimitedSaveResponseSchema = z.object({
+  error: z.string().optional(),
+  triggerReason: z
+    .enum(["analysis_limit", "game_limit", "puzzle_limit", "manual"])
+    .optional(),
+  showPaywall: z.boolean().optional(),
+})
+const saveErrorResponseSchema = z.object({
+  error: z.string(),
+})
 
 interface GameSessionProps {
   readonly gameId: string
   readonly startedAt: string
   readonly playerColor: PieceColor
   readonly opponentLevel: DifficultyLevel
+  readonly language: "ru" | "en"
+  readonly subscriptionTier: SubscriptionTier
+  readonly gameplayPreferences: GameplayPreferences
   readonly initialState: GameState
   readonly initialMoves: readonly RecordedMove[]
   readonly persistedGame: PersistedGameSnapshot
@@ -51,9 +79,12 @@ interface GameSessionProps {
 type PendingWorkerRequest = {
   readonly resolve: (move: Move) => void
   readonly reject: (error: Error) => void
+  readonly timeoutId: number
 }
 
 type SessionResult = "win" | "loss" | "draw" | "aborted"
+const EMPTY_SQUARE_SET = new Set<number>()
+const ANIMATION_CLEANUP_BUFFER_MS = 80
 
 function getSessionResultLabel(result: SessionResult) {
   if (result === "win") {
@@ -76,6 +107,9 @@ export function GameSession({
   startedAt,
   playerColor,
   opponentLevel,
+  language,
+  subscriptionTier,
+  gameplayPreferences,
   initialState,
   initialMoves,
   persistedGame,
@@ -93,12 +127,25 @@ export function GameSession({
   const applyRecordedMove = useGameSessionStore((store) => store.applyRecordedMove)
 
   const [botStatus, setBotStatus] = useState<"idle" | "thinking" | "error">("idle")
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">(
-    persistedGame.endedAt ? "saved" : "idle",
-  )
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error" | "rate_limited"
+  >(persistedGame.endedAt ? "saved" : "idle")
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null)
+  const [paywallOpen, setPaywallOpen] = useState(false)
+  const [paywallReason, setPaywallReason] = useState<PaywallTriggerReason>("game_limit")
+  const [showPaywall, setShowPaywall] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [resultDialogDismissed, setResultDialogDismissed] = useState(false)
   const [savedGame, setSavedGame] = useState<PersistedGameSnapshot>(persistedGame)
+  const [moveAnimation, setMoveAnimation] = useState<ActiveMoveAnimation | null>(null)
+  const [recommendedMove, setRecommendedMove] = useState<{
+    readonly positionKey: string
+    readonly move: Move
+  } | null>(null)
+  const [capturePath, setCapturePath] = useState<readonly number[]>([])
+  const [lastMove, setLastMove] = useState<{readonly from: number; readonly to: number} | null>(
+    null,
+  )
   const [forcedResult, setForcedResult] = useState<{
     readonly result: SessionResult
     readonly endReason: string
@@ -108,8 +155,30 @@ export function GameSession({
   const pendingRequestsRef = useRef<Map<string, PendingWorkerRequest>>(new Map())
   const playerTurnStartedAtRef = useRef<number | null>(null)
   const saveAttemptedRef = useRef(persistedGame.endedAt !== null)
+  const botRunningRef = useRef(false)
+  const animationTimeoutRef = useRef<number | null>(null)
+  const animationStartFrameRef = useRef<number | null>(null)
+  const animationRunFrameRef = useRef<number | null>(null)
+
+  const clearMoveAnimationTimers = useCallback(() => {
+    if (animationTimeoutRef.current !== null) {
+      window.clearTimeout(animationTimeoutRef.current)
+      animationTimeoutRef.current = null
+    }
+
+    if (animationStartFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationStartFrameRef.current)
+      animationStartFrameRef.current = null
+    }
+
+    if (animationRunFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationRunFrameRef.current)
+      animationRunFrameRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
+    clearMoveAnimationTimers()
     initializeSession({
       gameId,
       state: initialState,
@@ -122,6 +191,7 @@ export function GameSession({
     saveAttemptedRef.current = persistedGame.endedAt !== null
     playerTurnStartedAtRef.current = null
   }, [
+    clearMoveAnimationTimers,
     gameId,
     initialMoves,
     initialState,
@@ -131,6 +201,12 @@ export function GameSession({
     playerColor,
     startedAt,
   ])
+
+  useEffect(() => {
+    return () => {
+      clearMoveAnimationTimers()
+    }
+  }, [clearMoveAnimationTimers])
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -149,6 +225,7 @@ export function GameSession({
       }
 
       pendingRequests.delete(event.data.id)
+      window.clearTimeout(pending.timeoutId)
 
       if (event.data.error || !event.data.move) {
         pending.reject(new Error(event.data.error ?? "Bot move failed"))
@@ -160,6 +237,7 @@ export function GameSession({
 
     worker.onerror = () => {
       for (const pending of pendingRequests.values()) {
+        window.clearTimeout(pending.timeoutId)
         pending.reject(new Error("Engine worker crashed"))
       }
 
@@ -171,21 +249,31 @@ export function GameSession({
     return () => {
       worker.terminate()
       workerRef.current = null
+      for (const pending of pendingRequests.values()) {
+        window.clearTimeout(pending.timeoutId)
+      }
       pendingRequests.clear()
     }
   }, [])
 
   const legalMoves = useMemo(() => getLegalMoves(state), [state])
-  const engineResult =
-    state.status === "playing" ? null : (getPlayerGameResult(state, playerColor) as SessionResult)
+  const engineResult = state.status === "playing" ? null : getPlayerGameResult(state, playerColor)
   const sessionResult = forcedResult?.result ?? savedGame.result ?? engineResult
   const sessionEndReason =
     forcedResult?.endReason ??
     savedGame.endReason ??
     (state.status === "playing" ? null : state.endReason)
   const isFinished = sessionResult !== null || savedGame.endedAt !== null
-  const resultDialogOpen = isFinished && !resultDialogDismissed
+  const isAnimatingMove = moveAnimation !== null
+  const resultDialogOpen = isFinished && !isAnimatingMove && !resultDialogDismissed
   const isPlayerTurn = !isFinished && state.sideToMove === playerColor
+  const shouldShowRecommendedMove =
+    hydrated &&
+    gameplayPreferences.showRecommendedMoves &&
+    isPlayerTurn &&
+    !isAnimatingMove &&
+    botStatus !== "thinking" &&
+    saveStatus !== "saving"
   const playerMoves = useMemo(
     () => (isPlayerTurn ? legalMoves : []),
     [isPlayerTurn, legalMoves],
@@ -194,17 +282,74 @@ export function GameSession({
     () => (selectedSquare === null ? [] : playerMoves.filter((move) => move.from === selectedSquare)),
     [playerMoves, selectedSquare],
   )
+  const isStepByStepCaptureActive =
+    gameplayPreferences.captureInputMode === "step_by_step" &&
+    selectedSquare !== null &&
+    selectedMoves.length > 0 &&
+    selectedMoves.every((move) => move.captures.length > 0)
+  const activeCapturePath = useMemo(
+    () =>
+      isStepByStepCaptureActive
+        ? capturePath.length > 0
+          ? capturePath
+          : [selectedSquare!]
+        : [],
+    [capturePath, isStepByStepCaptureActive, selectedSquare],
+  )
   const selectableSquares = useMemo(
     () => new Set(playerMoves.map((move) => move.from)),
     [playerMoves],
   )
-  const destinationSquares = useMemo(
-    () => new Set(selectedMoves.map((move) => move.to)),
-    [selectedMoves],
+  const interactiveDestinationSquares = useMemo(
+    () =>
+      new Set(
+        isStepByStepCaptureActive
+          ? getCapturePathNextSquares(selectedMoves, activeCapturePath)
+          : selectedMoves.map((move) => move.to),
+      ),
+    [activeCapturePath, isStepByStepCaptureActive, selectedMoves],
+  )
+  const boardSelectableSquares = useMemo(
+    () => (gameplayPreferences.showLegalMoves ? selectableSquares : EMPTY_SQUARE_SET),
+    [gameplayPreferences.showLegalMoves, selectableSquares],
+  )
+  const boardDestinationSquares = useMemo(
+    () =>
+      gameplayPreferences.showLegalMoves || isStepByStepCaptureActive
+        ? interactiveDestinationSquares
+        : EMPTY_SQUARE_SET,
+    [gameplayPreferences.showLegalMoves, interactiveDestinationSquares, isStepByStepCaptureActive],
   )
   const hasPlayerMove = useMemo(
     () => recordedMoves.some((move) => move.side === playerColor),
     [playerColor, recordedMoves],
+  )
+  const lastMoveSquares = useMemo(
+    () => (lastMove ? new Set([lastMove.from, lastMove.to]) : EMPTY_SQUARE_SET),
+    [lastMove],
+  )
+  const recommendationPositionKey = useMemo(
+    () => `${state.sideToMove}:${state.moveHistory.join("|")}`,
+    [state.moveHistory, state.sideToMove],
+  )
+  const visibleRecommendedMove =
+    shouldShowRecommendedMove && recommendedMove?.positionKey === recommendationPositionKey
+      ? recommendedMove.move
+      : null
+  const recommendedSquares = useMemo(
+    () => (visibleRecommendedMove ? new Set(visibleRecommendedMove.path) : EMPTY_SQUARE_SET),
+    [visibleRecommendedMove],
+  )
+  const capturePathPreviewSquares = useMemo(
+    () =>
+      activeCapturePath.length > 1
+        ? new Set(activeCapturePath.slice(1, activeCapturePath.length))
+        : EMPTY_SQUARE_SET,
+    [activeCapturePath],
+  )
+  const capturePathLabel = useMemo(
+    () => activeCapturePath.map((square) => indexToSquare(square)).join(" → "),
+    [activeCapturePath],
   )
 
   useEffect(() => {
@@ -225,7 +370,17 @@ export function GameSession({
         }
 
         const id = crypto.randomUUID()
-        pendingRequestsRef.current.set(id, {resolve, reject})
+        const timeoutId = window.setTimeout(() => {
+          const pending = pendingRequestsRef.current.get(id)
+          if (!pending) {
+            return
+          }
+
+          pendingRequestsRef.current.delete(id)
+          pending.reject(new Error("Engine worker timed out"))
+        }, 10_000)
+
+        pendingRequestsRef.current.set(id, {resolve, reject, timeoutId})
 
         const payload: EngineWorkerRequest = {
           id,
@@ -240,10 +395,46 @@ export function GameSession({
 
   const commitMove = useCallback(
     (move: Move, durationMs: number | null) => {
+      const preparedAnimation = buildPreparedMoveAnimation(state, move)
+
+      setLastMove({
+        from: move.from,
+        to: move.to,
+      })
+
+      if (preparedAnimation) {
+        const animationDuration = getMoveAnimationDuration(move)
+        clearMoveAnimationTimers()
+        setMoveAnimation({
+          ...preparedAnimation,
+          durationMs: animationDuration,
+          started: false,
+        })
+        animationStartFrameRef.current = window.requestAnimationFrame(() => {
+          animationRunFrameRef.current = window.requestAnimationFrame(() => {
+            setMoveAnimation((current) =>
+              current
+                ? {
+                    ...current,
+                    started: true,
+                  }
+                : null,
+            )
+          })
+        })
+        animationTimeoutRef.current = window.setTimeout(() => {
+          animationTimeoutRef.current = null
+          setMoveAnimation(null)
+        }, animationDuration + ANIMATION_CLEANUP_BUFFER_MS)
+      } else {
+        setMoveAnimation(null)
+      }
+
       applyRecordedMove(move, durationMs)
+      setCapturePath([])
       setErrorMessage(null)
     },
-    [applyRecordedMove],
+    [applyRecordedMove, clearMoveAnimationTimers, state],
   )
 
   const handlePlayerMove = useCallback(
@@ -260,6 +451,7 @@ export function GameSession({
   const saveCompletedGame = useCallback(async () => {
     saveAttemptedRef.current = true
     setSaveStatus("saving")
+    setSaveErrorMessage(null)
     setErrorMessage(null)
 
     try {
@@ -278,28 +470,90 @@ export function GameSession({
         }),
       })
 
-      const payload = (await response.json()) as PersistedGameSnapshot | {error?: string}
-      if (!response.ok || "error" in payload) {
-        throw new Error("error" in payload ? payload.error : "Failed to save game")
+      const payload = await response.json().catch(() => null)
+
+      if (response.status === 429) {
+        const parsedRateLimitPayload = rateLimitedSaveResponseSchema.safeParse(payload)
+        const rateLimitPayload = parsedRateLimitPayload.success ? parsedRateLimitPayload.data : null
+
+        saveAttemptedRef.current = false
+        setSaveStatus("rate_limited")
+        setSaveErrorMessage(
+          rateLimitPayload?.error ?? "Лимит партий для текущего периода исчерпан.",
+        )
+        setPaywallReason(rateLimitPayload?.triggerReason ?? "game_limit")
+        setShowPaywall(rateLimitPayload?.showPaywall ?? false)
+        if (rateLimitPayload?.showPaywall) {
+          setPaywallOpen(true)
+        }
+        return
+      }
+
+      if (!response.ok) {
+        const parsedErrorPayload = saveErrorResponseSchema.safeParse(payload)
+        throw new Error(parsedErrorPayload.success ? parsedErrorPayload.data.error : "Failed to save game")
       }
 
       const parsedPayload = persistedGameSnapshotSchema.parse(payload)
       setSavedGame(parsedPayload)
       setForcedResult(null)
       setSaveStatus("saved")
+      setShowPaywall(false)
     } catch (error) {
       saveAttemptedRef.current = false
       setSaveStatus("error")
+      setSaveErrorMessage(error instanceof Error ? error.message : "Не удалось сохранить партию")
       setErrorMessage(error instanceof Error ? error.message : "Не удалось сохранить партию")
     }
   }, [forcedResult, gameId, recordedMoves])
 
   useEffect(() => {
-    if (!hydrated || isFinished) {
+    if (!shouldShowRecommendedMove) {
       return
     }
 
-    if (state.sideToMove === playerColor || botStatus !== "idle") {
+    let cancelled = false
+
+    async function loadRecommendation() {
+      try {
+        const move = await resolveRecommendedMove({
+          state,
+          requestWorkerMove,
+        })
+
+        if (!cancelled) {
+          setRecommendedMove({
+            positionKey: recommendationPositionKey,
+            move,
+          })
+        }
+      } catch {}
+    }
+
+    void loadRecommendation()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    botStatus,
+    gameplayPreferences.showRecommendedMoves,
+    hydrated,
+    isAnimatingMove,
+    isPlayerTurn,
+    requestWorkerMove,
+    recommendationPositionKey,
+    saveStatus,
+    shouldShowRecommendedMove,
+    state,
+  ])
+
+  useEffect(() => {
+    if (!hydrated || isFinished || isAnimatingMove) {
+      return
+    }
+
+    if (state.sideToMove === playerColor || botRunningRef.current) {
       return
     }
 
@@ -308,28 +562,32 @@ export function GameSession({
     }
 
     let cancelled = false
+    botRunningRef.current = true
 
     async function playBotMove() {
       setBotStatus("thinking")
       setErrorMessage(null)
 
       try {
-        const move =
-          opponentLevel === "easy"
-            ? getBestMove(state, "easy")
-            : await requestWorkerMove(state, opponentLevel)
+        const move = await resolveBotMove({
+          state,
+          opponentLevel,
+          requestWorkerMove,
+        })
 
         if (cancelled) {
           return
         }
 
         commitMove(move, null)
+        botRunningRef.current = false
         setBotStatus("idle")
       } catch (error) {
         if (cancelled) {
           return
         }
 
+        botRunningRef.current = false
         setBotStatus("error")
         setErrorMessage(error instanceof Error ? error.message : "Бот не смог сделать ход")
       }
@@ -339,19 +597,26 @@ export function GameSession({
 
     return () => {
       cancelled = true
+      botRunningRef.current = false
     }
-  }, [botStatus, commitMove, hydrated, isFinished, opponentLevel, playerColor, requestWorkerMove, state])
+  }, [commitMove, hydrated, isAnimatingMove, isFinished, opponentLevel, playerColor, requestWorkerMove, state])
 
   useEffect(() => {
-    if (!hydrated || !isFinished || persistedComplete || saveAttemptedRef.current) {
+    if (!hydrated || !isFinished || persistedComplete || saveAttemptedRef.current || isAnimatingMove) {
       return
     }
 
     void saveCompletedGame()
-  }, [hydrated, isFinished, persistedComplete, saveCompletedGame])
+  }, [hydrated, isAnimatingMove, isFinished, persistedComplete, saveCompletedGame])
 
   const handleResign = useCallback(() => {
-    if (!hasPlayerMove || !isPlayerTurn || botStatus === "thinking" || saveStatus === "saving") {
+    if (
+      !hasPlayerMove ||
+      !isPlayerTurn ||
+      isAnimatingMove ||
+      botStatus === "thinking" ||
+      saveStatus === "saving"
+    ) {
       return
     }
 
@@ -360,33 +625,77 @@ export function GameSession({
       result: "loss",
       endReason: "resignation",
     })
-  }, [botStatus, hasPlayerMove, isPlayerTurn, saveStatus])
+  }, [botStatus, hasPlayerMove, isAnimatingMove, isPlayerTurn, saveStatus])
 
-  const handleSquarePress = (index: number) => {
-    if (!isPlayerTurn || botStatus === "thinking" || saveStatus === "saving") {
-      return
-    }
+  const handleSquarePress = useCallback(
+    (index: number) => {
+      if (!isPlayerTurn || isAnimatingMove || botStatus === "thinking" || saveStatus === "saving") {
+        return
+      }
 
-    const destinationMoves = selectedMoves.filter((move) => move.to === index)
-    if (destinationMoves.length === 1) {
-      handlePlayerMove(destinationMoves[0]!)
-      return
-    }
+      if (isStepByStepCaptureActive && interactiveDestinationSquares.has(index)) {
+        const nextPath = [...activeCapturePath, index]
+        const resolvedMove = findMoveMatchingPath(selectedMoves, nextPath)
 
-    if (destinationMoves.length > 1) {
-      setAmbiguousMoves(destinationMoves)
-      return
-    }
+        if (resolvedMove) {
+          handlePlayerMove(resolvedMove)
+          setCapturePath([])
+          return
+        }
 
-    if (selectableSquares.has(index)) {
-      setErrorMessage(null)
-      setAmbiguousMoves([])
-      selectSquare(selectedSquare === index ? null : index)
-      return
-    }
+        setErrorMessage(null)
+        setAmbiguousMoves([])
+        setCapturePath(nextPath)
+        return
+      }
 
-    clearMoveChoiceState()
-  }
+      const destinationMoves = selectedMoves.filter((move) => move.to === index)
+      if (destinationMoves.length === 1) {
+        handlePlayerMove(destinationMoves[0]!)
+        setCapturePath([])
+        return
+      }
+
+      if (destinationMoves.length > 1) {
+        setAmbiguousMoves(destinationMoves)
+        setCapturePath([])
+        return
+      }
+
+      if (selectableSquares.has(index)) {
+        setErrorMessage(null)
+        setAmbiguousMoves([])
+        const nextSelectedSquare = selectedSquare === index ? null : index
+        selectSquare(nextSelectedSquare)
+        setCapturePath(
+          gameplayPreferences.captureInputMode === "step_by_step" && nextSelectedSquare !== null
+            ? [nextSelectedSquare]
+            : [],
+        )
+        return
+      }
+
+      clearMoveChoiceState()
+      setCapturePath([])
+    },
+    [
+      activeCapturePath,
+      botStatus,
+      clearMoveChoiceState,
+      gameplayPreferences.captureInputMode,
+      handlePlayerMove,
+      interactiveDestinationSquares,
+      isAnimatingMove,
+      isPlayerTurn,
+      isStepByStepCaptureActive,
+      saveStatus,
+      selectableSquares,
+      selectSquare,
+      selectedMoves,
+      selectedSquare,
+      setAmbiguousMoves,
+    ],
+  )
 
   return (
     <>
@@ -399,7 +708,13 @@ export function GameSession({
             isFinished={isFinished}
             botStatus={botStatus}
             saveStatus={saveStatus}
-            canResign={hasPlayerMove && isPlayerTurn && botStatus !== "thinking" && saveStatus !== "saving"}
+            canResign={
+              hasPlayerMove &&
+              isPlayerTurn &&
+              !isAnimatingMove &&
+              botStatus !== "thinking" &&
+              saveStatus !== "saving"
+            }
             onResign={handleResign}
           />
 
@@ -413,11 +728,36 @@ export function GameSession({
           <Board
             state={state}
             selectedSquare={selectedSquare}
-            selectableSquares={selectableSquares}
-            destinationSquares={destinationSquares}
-            disabled={!isPlayerTurn || botStatus === "thinking"}
+            selectableSquares={boardSelectableSquares}
+            destinationSquares={boardDestinationSquares}
+            lastMoveSquares={lastMoveSquares}
+            recommendedSquares={recommendedSquares}
+            pathPreviewSquares={capturePathPreviewSquares}
+            moveAnimation={moveAnimation}
+            boardTheme={gameplayPreferences.boardTheme}
+            disabled={!isPlayerTurn || isAnimatingMove || botStatus === "thinking"}
             onSquarePress={handleSquarePress}
           />
+
+          {isStepByStepCaptureActive && activeCapturePath.length > 1 ? (
+            <Card size="sm">
+              <CardHeader>
+                <CardTitle>Пошаговое взятие</CardTitle>
+                <CardDescription>
+                  Текущая траектория: {capturePathLabel}. Выберите следующее продолжение на доске.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="h-auto px-3 py-2 text-sm"
+                  onClick={() => setCapturePath([selectedSquare!])}
+                >
+                  Сбросить траекторию
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {ambiguousMoves.length > 0 ? (
             <Card size="sm">
@@ -483,12 +823,24 @@ export function GameSession({
         sharpnessScore={savedGame.sharpnessScore}
         sharpnessBreakdown={savedGame.sharpnessBreakdown}
         endReason={sessionEndReason}
+        saveErrorMessage={saveErrorMessage}
+        showPaywall={showPaywall}
+        onOpenPaywall={() => setPaywallOpen(true)}
         onRetrySave={() => {
           if (saveStatus !== "saving") {
             void saveCompletedGame()
           }
         }}
       />
+      {showPaywall ? (
+        <PaywallModal
+          open={paywallOpen}
+          onOpenChange={setPaywallOpen}
+          language={language}
+          triggerReason={paywallReason}
+          currentTier={subscriptionTier}
+        />
+      ) : null}
     </>
   )
 }

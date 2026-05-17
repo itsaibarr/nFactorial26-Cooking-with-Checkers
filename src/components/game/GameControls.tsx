@@ -53,7 +53,7 @@ export function GameControls({
   isPlayerTurn: boolean
   isFinished: boolean
   botStatus: "idle" | "thinking" | "error"
-  saveStatus: "idle" | "saving" | "saved" | "error"
+  saveStatus: "idle" | "saving" | "saved" | "error" | "rate_limited"
   canResign: boolean
   onResign: () => void
 }) {
@@ -71,6 +71,7 @@ export function GameControls({
         </Badge>
         {saveStatus === "saving" ? <Badge variant="secondary">Сохраняем…</Badge> : null}
         {saveStatus === "saved" ? <Badge variant="outline">Сохранено</Badge> : null}
+        {saveStatus === "rate_limited" ? <Badge variant="destructive">Лимит</Badge> : null}
       </div>
 
       <div className="flex gap-2">

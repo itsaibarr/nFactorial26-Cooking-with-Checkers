@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { captureServerEvent, captureServerException } from "@/lib/posthog/server"
 import { getPlayerGameResult, recordedMoveInputListSchema, replayRecordedGame } from "@/lib/game/session"
+import { reserveRateLimitSlot } from "@/lib/rate-limit"
 import {
   computeGameSharpness,
   sharpnessBreakdownSchema,
@@ -28,6 +29,32 @@ const storedGameSchema = z.object({
   sharpness_score: z.number().int().min(0).max(100).nullable(),
   sharpness_breakdown: sharpnessBreakdownSchema.nullable(),
 })
+
+const storedProfileSchema = z.object({
+  current_sharpness: z.number().int().min(0).max(100),
+  streak_days: z.number().int().min(0),
+  last_activity_date: z.string().nullable(),
+  language: z.enum(["ru", "en"]),
+  subscription_tier: z.enum(["free", "pro", "family"]),
+})
+
+function getGameRateLimitMessage({
+  language,
+  showPaywall,
+}: {
+  language: "ru" | "en"
+  showPaywall: boolean
+}) {
+  if (showPaywall) {
+    return language === "ru"
+      ? "Бесплатный дневной лимит партий на сегодня исчерпан."
+      : "You have already used today's free game limit."
+  }
+
+  return language === "ru"
+    ? "Лимит партий для текущего периода исчерпан."
+    : "You have already used the game limit for this period."
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -102,7 +129,7 @@ export async function POST(request: Request) {
 
     const {data: profile, error: profileError} = await supabase
       .from("profiles")
-      .select("current_sharpness, streak_days, last_activity_date")
+      .select("current_sharpness, streak_days, last_activity_date, language, subscription_tier")
       .eq("id", user.id)
       .single()
 
@@ -110,11 +137,38 @@ export async function POST(request: Request) {
       return NextResponse.json({error: "Profile not found"}, {status: 404})
     }
 
-    const nextSharpness = updateSharpnessEma(profile.current_sharpness, sharpness.score)
+    const parsedProfile = storedProfileSchema.safeParse(profile)
+    if (!parsedProfile.success) {
+      return NextResponse.json({error: "Profile is invalid"}, {status: 500})
+    }
+
+    const rateLimit = await reserveRateLimitSlot({
+      supabase,
+      userId: user.id,
+      action: "game",
+      subscriptionTier: parsedProfile.data.subscription_tier,
+    })
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: getGameRateLimitMessage({
+            language: parsedProfile.data.language,
+            showPaywall: rateLimit.showPaywall,
+          }),
+          triggerReason: rateLimit.triggerReason,
+          limit: rateLimit.limit,
+          showPaywall: rateLimit.showPaywall,
+        },
+        {status: 429},
+      )
+    }
+
+    const nextSharpness = updateSharpnessEma(parsedProfile.data.current_sharpness, sharpness.score)
     const today = getTodayDateString()
     const streakResult = advanceStreak({
-      currentStreakDays: profile.streak_days,
-      lastActivityDate: profile.last_activity_date,
+      currentStreakDays: parsedProfile.data.streak_days,
+      lastActivityDate: parsedProfile.data.last_activity_date,
       today,
     })
     const endedAt = new Date().toISOString()
