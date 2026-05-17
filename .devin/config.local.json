@@ -42,7 +42,11 @@
       "Exec(stat)",
       "Exec(pgrep)",
       "Exec(rsync)",
-      "Exec(cp)"
+      "Exec(cp)",
+      "Exec(grep)",
+      "Exec(xargs grep)",
+      "Exec(tail)",
+      "Exec(mv)"
     ]
   }
 }
