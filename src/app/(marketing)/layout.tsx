@@ -1,5 +1,6 @@
 import { LanguageToggle } from "@/components/common/LanguageToggle";
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n";
+import { getAppTranslator } from "@/lib/i18n";
+import { resolveLocaleFromCookie } from "@/lib/i18n/server";
 
 export default async function MarketingLayout({
   children,

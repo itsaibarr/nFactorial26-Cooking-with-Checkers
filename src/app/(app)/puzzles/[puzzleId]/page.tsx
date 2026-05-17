@@ -19,7 +19,8 @@ import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/server"
 import type { CreateGameStateOptions, PieceColor } from "@/lib/engine/types"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
+import { getAppTranslator } from "@/lib/i18n"
+import { resolveLocaleFromCookie } from "@/lib/i18n/server"
 
 interface PageProps {
   params: Promise<{puzzleId: string}>

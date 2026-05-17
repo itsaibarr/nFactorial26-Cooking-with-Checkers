@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { createClient } from "@/lib/supabase/server";
-import { resolveLocaleFromCookie } from "@/lib/i18n";
+import { resolveLocaleFromCookie } from "@/lib/i18n/server";
 
 export default async function AppLayout({
   children,

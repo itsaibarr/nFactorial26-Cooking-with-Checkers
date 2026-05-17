@@ -4,7 +4,8 @@ import { LandingPageAnalytics } from "@/components/common/LandingPageAnalytics";
 import { SignInButton } from "@/components/common/SignInButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createClient } from "@/lib/supabase/server";
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n";
+import { getAppTranslator } from "@/lib/i18n";
+import { resolveLocaleFromCookie } from "@/lib/i18n/server";
 
 export default async function LandingPage({
   searchParams,

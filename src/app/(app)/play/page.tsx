@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/card"
 import { StartGameSubmitButton } from "@/components/game/StartGameSubmitButton"
 import { createClient } from "@/lib/supabase/server"
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
+import { getAppTranslator } from "@/lib/i18n"
+import { resolveLocaleFromCookie } from "@/lib/i18n/server"
 
 const startGameSchema = z.object({
   playerColor: z.enum(["white", "black"]),

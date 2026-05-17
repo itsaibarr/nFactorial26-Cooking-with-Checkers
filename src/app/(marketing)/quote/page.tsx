@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n";
+import { getAppTranslator } from "@/lib/i18n";
+import { resolveLocaleFromCookie } from "@/lib/i18n/server";
 
 export default async function QuotePage() {
   const locale = await resolveLocaleFromCookie();
@@ -67,7 +68,15 @@ export default async function QuotePage() {
           <div className="mt-10 flex items-center gap-4">
             <span className="h-px flex-1 bg-primary/30" />
             <span className="text-sm font-medium tracking-wide text-muted-foreground">
-              {t("quote.attribution")}
+              {t("quote.attributionPrefix")}{" "}
+              <a
+                href="https://tryscout.study/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+              >
+                Scout
+              </a>
             </span>
             <span className="h-px flex-1 bg-primary/30" />
           </div>

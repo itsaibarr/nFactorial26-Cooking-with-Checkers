@@ -18,7 +18,8 @@ import {
 } from "@/lib/game/preferences"
 import { getPlanFromPriceId } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
+import { getAppTranslator } from "@/lib/i18n"
+import { resolveLocaleFromCookie } from "@/lib/i18n/server"
 
 function formatPlanLabel(priceId: string | null) {
   if (!priceId) {

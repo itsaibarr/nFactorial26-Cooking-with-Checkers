@@ -59,7 +59,8 @@
   },
   "quote": {
     "navLabel": "Quote",
-    "attribution": "Aibar, Founder",
+    "attributionPrefix": "Aibar, Founder of",
+    "attributionSuffix": "",
     "p1": "This project was built in about {hours} hours of straight coding.",
     "p2": "You sent me the email about the second stage of the application about two days ago. Around that time I was at an event at {school}, where our team won {prize}.",
     "p3": "So I didn't have much time to start earlier. Not making excuses, just giving context. Once the event wrapped up today, I sat down and built this. Keep in mind: roughly {hours} hours of work."

@@ -10,7 +10,8 @@ import { recordedMoveListSchema, replayRecordedGame } from "@/lib/game/session"
 import { sharpnessBreakdownSchema } from "@/lib/sharpness/compute"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
+import { getAppTranslator } from "@/lib/i18n"
+import { resolveLocaleFromCookie } from "@/lib/i18n/server"
 
 const storedGameSchema = z.object({
   id: z.string().uuid(),

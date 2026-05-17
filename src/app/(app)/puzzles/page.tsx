@@ -16,7 +16,8 @@ import {
 } from "@/lib/puzzles/daily"
 import { isStripePlanConfigured } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
-import { getAppTranslator, resolveLocaleFromCookie } from "@/lib/i18n"
+import { getAppTranslator } from "@/lib/i18n"
+import { resolveLocaleFromCookie } from "@/lib/i18n/server"
 
 /**
  * /puzzles → redirect to the next available task in today's daily set.
