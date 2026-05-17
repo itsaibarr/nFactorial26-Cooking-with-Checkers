@@ -46,7 +46,7 @@ describe("buildDashboardActivityHeatmap", () => {
     })
   })
 
-  it("uses 53 monday-start weeks for the trailing 12-month window", () => {
+  it("uses 27 monday-start weeks for the trailing 6-month window", () => {
     const heatmap = buildDashboardActivityHeatmap({
       endDate: "2026-05-17",
       gameEndedAt: [],
@@ -55,14 +55,14 @@ describe("buildDashboardActivityHeatmap", () => {
 
     const days = heatmap.weeks.flatMap((week) => week.days)
 
-    expect(heatmap.range.startDate).toBe("2025-05-18")
+    expect(heatmap.range.startDate).toBe("2025-11-16")
     expect(heatmap.range.endDate).toBe("2026-05-17")
-    expect(heatmap.weeks).toHaveLength(53)
+    expect(heatmap.weeks).toHaveLength(27)
     expect(heatmap.weeks.every((week) => week.days.length === 7)).toBe(true)
-    expect(days).toHaveLength(371)
-    expect(days.filter((day) => day.inRange)).toHaveLength(365)
+    expect(days).toHaveLength(189)
+    expect(days.filter((day) => day.inRange)).toHaveLength(183)
     expect(days[0]).toMatchObject({
-      date: "2025-05-12",
+      date: "2025-11-10",
       inRange: false,
     })
   })
@@ -102,13 +102,13 @@ describe("buildDashboardActivityHeatmap", () => {
     )
 
     expect(januaryWeek?.monthLabelDate).toBe("2026-01-01")
-    expect(labels).toContain("2025-05-18")
+    expect(labels).toContain("2025-11-16")
     expect(labels).toContain("2026-01-01")
   })
 
-  it("returns the trailing 12-month query range", () => {
+  it("returns the trailing 6-month query range", () => {
     expect(getDashboardActivityRange("2026-05-17")).toEqual({
-      startDate: "2025-05-18",
+      startDate: "2025-11-16",
       endDate: "2026-05-17",
     })
   })

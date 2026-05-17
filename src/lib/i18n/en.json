@@ -30,10 +30,10 @@
     },
     "activityHeatmap": {
       "title": "Activity heatmap",
-      "description": "Games and solved puzzles over the last 12 months.",
-      "summary": "{count, plural, one {# training session in the last 12 months} other {# training sessions in the last 12 months}}",
+      "description": "Games and solved puzzles over the last 6 months.",
+      "summary": "{count, plural, one {# training session in the last 6 months} other {# training sessions in the last 6 months}}",
       "activeDays": "Active days: {count}",
-      "srSummary": "Over the last 12 months, you have {activityCount, plural, one {# training session} other {# training sessions}} across {activeDays, plural, one {# active day} other {# active days}}. Darker cells mean more training on that day.",
+      "srSummary": "Over the last 6 months, you have {activityCount, plural, one {# training session} other {# training sessions}} across {activeDays, plural, one {# active day} other {# active days}}. Darker cells mean more training on that day.",
       "legendDescription": "Color shows how active your training was on a given day.",
       "legendLess": "Less",
       "legendMore": "More",

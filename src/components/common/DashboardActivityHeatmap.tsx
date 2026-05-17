@@ -1,3 +1,6 @@
+"use client"
+
+import { useCallback, useRef, useState } from "react"
 import {
   Card,
   CardContent,
@@ -23,6 +26,30 @@ export function DashboardActivityHeatmap({
   locale: AppLocale
 }) {
   const {t} = getAppTranslator(locale)
+  const [tooltip, setTooltip] = useState<{
+    day: DashboardActivityHeatmapDay
+    x: number
+    y: number
+  } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const handleCellEnter = useCallback(
+    (day: DashboardActivityHeatmapDay, cell: HTMLDivElement) => {
+      if (!day.inRange || !containerRef.current) return
+
+      const containerRect = containerRef.current.getBoundingClientRect()
+      const cellRect = cell.getBoundingClientRect()
+      const x = cellRect.left + cellRect.width / 2 - containerRect.left
+      const y = cellRect.top - containerRect.top - 8
+
+      setTooltip({day, x, y})
+    },
+    [],
+  )
+
+  const handleCellLeave = useCallback(() => {
+    setTooltip(null)
+  }, [])
 
   return (
     <Card>
@@ -49,24 +76,24 @@ export function DashboardActivityHeatmap({
             activeDays: data.activeDays,
           })}
         </p>
-        <div className="overflow-x-auto pb-1">
-          <div className="inline-flex min-w-max gap-3" aria-hidden="true">
-            <div className="pt-6">
-              <div className="flex flex-col gap-1">
+        <div ref={containerRef} className="relative">
+          <div className="flex gap-2" aria-hidden="true">
+            <div className="pt-6 shrink-0">
+              <div className="flex flex-col gap-[3px]">
                 {getDayLabels(locale).map((label, index) => (
                   <div
                     key={`day-label-${index}`}
-                    className="flex h-3 items-center text-[10px] leading-none text-muted-foreground"
+                    className="flex h-[10px] items-center text-[10px] leading-none text-muted-foreground"
                   >
                     {label}
                   </div>
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex gap-1">
+            <div className="flex-1 min-w-0 space-y-[3px]">
+              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "3px"}}>
                 {data.weeks.map((week) => (
-                  <div key={`month-${week.days[0]?.date ?? "empty"}`} className="relative h-4 w-3">
+                  <div key={`month-${week.days[0]?.date ?? "empty"}`} className="relative h-4">
                     {week.monthLabelDate ? (
                       <span className="absolute left-0 top-0 whitespace-nowrap text-[10px] leading-none text-muted-foreground">
                         {formatMonthLabel(locale, week.monthLabelDate)}
@@ -75,14 +102,24 @@ export function DashboardActivityHeatmap({
                   </div>
                 ))}
               </div>
-              <div className="flex gap-1">
+              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 1fr)`, gap: "3px"}}>
                 {data.weeks.map((week) => (
-                  <div key={`week-${week.days[0]?.date ?? "empty"}`} className="flex flex-col gap-1">
+                  <div key={`week-${week.days[0]?.date ?? "empty"}`} className="flex flex-col gap-[3px]">
                     {week.days.map((day) => (
                       <div
                         key={day.date}
-                        title={formatDayTooltip(day, locale, t)}
-                        className={getCellClassName(day.level, day.inRange)}
+                        onMouseEnter={(e) => handleCellEnter(day, e.currentTarget)}
+                        onMouseLeave={handleCellLeave}
+                        className={cn(
+                          "aspect-square w-full rounded-[3px] border transition-colors",
+                          !day.inRange && "border-transparent bg-transparent",
+                          day.inRange && day.level === 0 && "border-border/60 bg-muted/70 dark:border-border/50 dark:bg-muted/40",
+                          day.inRange && day.level === 1 && "border-amber-200 bg-amber-100 dark:border-amber-900/80 dark:bg-amber-950/60",
+                          day.inRange && day.level === 2 && "border-amber-300 bg-amber-200 dark:border-amber-800 dark:bg-amber-900/80",
+                          day.inRange && day.level === 3 && "border-amber-400 bg-amber-400 dark:border-amber-700 dark:bg-amber-700",
+                          day.inRange && day.level === 4 && "border-amber-600 bg-amber-600 dark:border-amber-500 dark:bg-amber-500",
+                          day.inRange && day.level > 0 && "hover:ring-2 hover:ring-amber-400/50 hover:ring-offset-1",
+                        )}
                       />
                     ))}
                   </div>
@@ -90,6 +127,15 @@ export function DashboardActivityHeatmap({
               </div>
             </div>
           </div>
+          {tooltip ? (
+            <div
+              className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-md border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md"
+              style={{left: tooltip.x, top: tooltip.y}}
+            >
+              <p className="font-medium">{formatDayDate(tooltip.day, locale)}</p>
+              <p className="text-muted-foreground">{formatDayCounts(tooltip.day, t)}</p>
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>{t("dashboard.activityHeatmap.legendDescription")}</p>
@@ -99,7 +145,14 @@ export function DashboardActivityHeatmap({
               {LEGEND_LEVELS.map((level) => (
                 <div
                   key={`legend-${level}`}
-                  className={getCellClassName(level, true)}
+                  className={cn(
+                    "size-3 rounded-[3px] border",
+                    level === 0 && "border-border/60 bg-muted/70 dark:border-border/50 dark:bg-muted/40",
+                    level === 1 && "border-amber-200 bg-amber-100 dark:border-amber-900/80 dark:bg-amber-950/60",
+                    level === 2 && "border-amber-300 bg-amber-200 dark:border-amber-800 dark:bg-amber-900/80",
+                    level === 3 && "border-amber-400 bg-amber-400 dark:border-amber-700 dark:bg-amber-700",
+                    level === 4 && "border-amber-600 bg-amber-600 dark:border-amber-500 dark:bg-amber-500",
+                  )}
                 />
               ))}
             </div>
@@ -137,36 +190,20 @@ function formatMonthLabel(locale: AppLocale, date: string) {
     .replace(/\.$/, "")
 }
 
-function getCellClassName(level: ActivityLevel, inRange: boolean) {
-  return cn(
-    "size-3 rounded-[4px] border",
-    !inRange && "border-transparent bg-transparent",
-    inRange && level === 0 && "border-border/60 bg-muted/70 dark:border-border/50 dark:bg-muted/40",
-    inRange && level === 1 && "border-amber-200 bg-amber-100 dark:border-amber-900/80 dark:bg-amber-950/60",
-    inRange && level === 2 && "border-amber-300 bg-amber-200 dark:border-amber-800 dark:bg-amber-900/80",
-    inRange && level === 3 && "border-amber-400 bg-amber-400 dark:border-amber-700 dark:bg-amber-700",
-    inRange && level === 4 && "border-amber-600 bg-amber-600 dark:border-amber-500 dark:bg-amber-500",
-  )
-}
-
-function formatDayTooltip(
-  day: DashboardActivityHeatmapDay,
-  locale: AppLocale,
-  t: ReturnType<typeof getAppTranslator>["t"],
-) {
-  if (!day.inRange) {
-    return ""
-  }
-
-  const date = new Intl.DateTimeFormat(getDateTimeLocale(locale), {
+function formatDayDate(day: DashboardActivityHeatmapDay, locale: AppLocale) {
+  return new Intl.DateTimeFormat(getDateTimeLocale(locale), {
     day: "numeric",
-    month: "long",
-    year: "numeric",
+    month: "short",
     timeZone: "UTC",
   }).format(new Date(`${day.date}T00:00:00.000Z`))
+}
 
+function formatDayCounts(
+  day: DashboardActivityHeatmapDay,
+  t: ReturnType<typeof getAppTranslator>["t"],
+) {
   if (day.total === 0) {
-    return `${date}: ${t("dashboard.activityHeatmap.noActivity")}`
+    return t("dashboard.activityHeatmap.noActivity")
   }
 
   const parts: string[] = []
@@ -179,5 +216,5 @@ function formatDayTooltip(
     parts.push(t("dashboard.activityHeatmap.puzzleCount", {count: day.puzzles}))
   }
 
-  return `${date}: ${t("dashboard.activityHeatmap.trainingCount", {count: day.total})} · ${parts.join(" · ")}`
+  return `${t("dashboard.activityHeatmap.trainingCount", {count: day.total})} · ${parts.join(" · ")}`
 }

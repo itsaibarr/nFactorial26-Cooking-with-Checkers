@@ -26,7 +26,7 @@ export interface DashboardActivityHeatmapData {
 
 export function getDashboardActivityRange(endDate = new Date().toISOString().slice(0, 10)) {
   return {
-    startDate: addDays(endDate, -364),
+    startDate: addDays(endDate, -182),
     endDate,
   }
 }
