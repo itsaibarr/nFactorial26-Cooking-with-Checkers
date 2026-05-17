@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { captureServerEvent } from "@/lib/posthog/server"
-import { reserveRateLimitSlot } from "@/lib/rate-limit"
+import { captureServerEvent, captureServerException } from "@/lib/posthog/server"
+import { releaseRateLimitSlot, reserveRateLimitSlot } from "@/lib/rate-limit"
 import { advanceStreak, getTodayDateString } from "@/lib/streak/advance"
 import { createClient } from "@/lib/supabase/server"
 
@@ -28,8 +28,8 @@ function getPuzzleRateLimitMessage({
 }) {
   if (showPaywall) {
     return language === "ru"
-      ? "Бесплатный дневной лимит задач на сегодня исчерпан."
-      : "You have already used today's free puzzle limit."
+      ? "Вы уже выполнили 3 бесплатные задачи на сегодня."
+      : "You have already completed 3 free daily tasks today."
   }
 
   return language === "ru"
@@ -42,6 +42,10 @@ export async function POST(request: Request) {
   const {
     data: {user},
   } = await supabase.auth.getUser()
+  let reservedRateLimit: {
+    subscriptionTier: z.infer<typeof storedProfileSchema>["subscription_tier"]
+  } | null = null
+  let attemptPersisted = false
 
   if (!user) {
     return NextResponse.json({error: "Unauthorized"}, {status: 401})
@@ -55,101 +59,127 @@ export async function POST(request: Request) {
 
   const {puzzleId, solved, timeTakenSeconds, attemptsUsed} = parsed.data
 
-  let profileData: z.infer<typeof storedProfileSchema> | null = null
+  try {
+    let profileData: z.infer<typeof storedProfileSchema> | null = null
 
-  if (solved) {
-    const {data: profile, error: profileError} = await supabase
-      .from("profiles")
-      .select("streak_days, last_activity_date, language, subscription_tier")
-      .eq("id", user.id)
-      .single()
+    if (solved) {
+      const {data: profile, error: profileError} = await supabase
+        .from("profiles")
+        .select("streak_days, last_activity_date, language, subscription_tier")
+        .eq("id", user.id)
+        .single()
 
-    if (profileError || !profile) {
-      return NextResponse.json({error: "Profile not found"}, {status: 404})
-    }
+      if (profileError || !profile) {
+        return NextResponse.json({error: "Profile not found"}, {status: 404})
+      }
 
-    const parsedProfile = storedProfileSchema.safeParse(profile)
-    if (!parsedProfile.success) {
-      return NextResponse.json({error: "Profile is invalid"}, {status: 500})
-    }
+      const parsedProfile = storedProfileSchema.safeParse(profile)
+      if (!parsedProfile.success) {
+        return NextResponse.json({error: "Profile is invalid"}, {status: 500})
+      }
 
-    profileData = parsedProfile.data
+      profileData = parsedProfile.data
 
-    const rateLimit = await reserveRateLimitSlot({
-      supabase,
-      userId: user.id,
-      action: "puzzle",
-      subscriptionTier: parsedProfile.data.subscription_tier,
-    })
+      const rateLimit = await reserveRateLimitSlot({
+        supabase,
+        userId: user.id,
+        action: "puzzle",
+        subscriptionTier: parsedProfile.data.subscription_tier,
+      })
 
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        {
-          error: getPuzzleRateLimitMessage({
-            language: parsedProfile.data.language,
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            error: getPuzzleRateLimitMessage({
+              language: parsedProfile.data.language,
+              showPaywall: rateLimit.showPaywall,
+            }),
+            triggerReason: rateLimit.triggerReason,
+            limit: rateLimit.limit,
             showPaywall: rateLimit.showPaywall,
-          }),
-          triggerReason: rateLimit.triggerReason,
-          limit: rateLimit.limit,
-          showPaywall: rateLimit.showPaywall,
-        },
-        {status: 429},
-      )
+          },
+          {status: 429},
+        )
+      }
+
+      reservedRateLimit = {
+        subscriptionTier: parsedProfile.data.subscription_tier,
+      }
     }
-  }
 
-  // Upsert puzzle attempt (keep first attempt record if already solved).
-  const {error: attemptError} = await supabase.from("puzzle_attempts").upsert(
-    {
-      user_id: user.id,
+    const {error: attemptError} = await supabase.from("puzzle_attempts").upsert(
+      {
+        user_id: user.id,
+        puzzle_id: puzzleId,
+        solved,
+        attempts_used: attemptsUsed,
+        time_taken_seconds: timeTakenSeconds ?? null,
+      },
+      {
+        onConflict: "user_id,puzzle_id",
+        ignoreDuplicates: true,
+      },
+    )
+
+    if (attemptError) {
+      throw attemptError
+    }
+
+    attemptPersisted = true
+
+    let newStreakDays: number | null = null
+    if (solved && profileData) {
+      const today = getTodayDateString()
+      const streakResult = advanceStreak({
+        currentStreakDays: profileData.streak_days,
+        lastActivityDate: profileData.last_activity_date,
+        today,
+      })
+
+      if (streakResult.changed) {
+        const {error: profileUpdateError} = await supabase
+          .from("profiles")
+          .update({
+            streak_days: streakResult.newStreakDays,
+            last_activity_date: streakResult.newLastActivityDate,
+          })
+          .eq("id", user.id)
+
+        if (profileUpdateError) {
+          throw profileUpdateError
+        }
+      }
+
+      newStreakDays = streakResult.newStreakDays
+
+      await captureServerEvent({
+        distinctId: user.id,
+        event: "puzzle_solved",
+        properties: {
+          puzzle_id: puzzleId,
+          time_taken_seconds: timeTakenSeconds ?? null,
+          attempts_used: attemptsUsed,
+          streak_days: newStreakDays,
+        },
+      }).catch(() => undefined)
+    }
+
+    return NextResponse.json({ok: true, streakDays: newStreakDays})
+  } catch (error) {
+    if (reservedRateLimit && !attemptPersisted) {
+      await releaseRateLimitSlot({
+        supabase,
+        userId: user.id,
+        action: "puzzle",
+        subscriptionTier: reservedRateLimit.subscriptionTier,
+      }).catch(() => undefined)
+    }
+
+    await captureServerException(error, user.id, {
+      stage: "puzzle_attempt",
       puzzle_id: puzzleId,
-      solved,
-      attempts_used: attemptsUsed,
-      time_taken_seconds: timeTakenSeconds ?? null,
-    },
-    {
-      onConflict: "user_id,puzzle_id",
-      ignoreDuplicates: true, // don't overwrite an existing solved record
-    },
-  )
+    }).catch(() => undefined)
 
-  if (attemptError) {
     return NextResponse.json({error: "Failed to record attempt"}, {status: 500})
   }
-
-  // Advance streak only on a successful solve.
-  let newStreakDays: number | null = null
-  if (solved && profileData) {
-    const today = getTodayDateString()
-    const streakResult = advanceStreak({
-      currentStreakDays: profileData.streak_days,
-      lastActivityDate: profileData.last_activity_date,
-      today,
-    })
-
-    if (streakResult.changed) {
-      await supabase
-        .from("profiles")
-        .update({
-          streak_days: streakResult.newStreakDays,
-          last_activity_date: streakResult.newLastActivityDate,
-        })
-        .eq("id", user.id)
-    }
-
-    newStreakDays = streakResult.newStreakDays
-
-    await captureServerEvent({
-      distinctId: user.id,
-      event: "puzzle_solved",
-      properties: {
-        puzzle_id: puzzleId,
-        time_taken_seconds: timeTakenSeconds ?? null,
-        attempts_used: attemptsUsed,
-        streak_days: newStreakDays,
-      },
-    }).catch(() => undefined)
-  }
-
-  return NextResponse.json({ok: true, streakDays: newStreakDays})
 }

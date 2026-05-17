@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { FREE_DAILY_TASK_LIMIT } from "@/lib/puzzles/daily"
 import { createClient } from "@/lib/supabase/server"
 
 export type SubscriptionTier = "free" | "pro" | "family"
@@ -33,7 +34,7 @@ const POLICY_MATRIX: Record<
   free: {
     ai_analysis: {limit: 1, window: "day"},
     game: {limit: 5, window: "day"},
-    puzzle: {limit: 1, window: "day"},
+    puzzle: {limit: FREE_DAILY_TASK_LIMIT, window: "day"},
   },
   pro: {
     ai_analysis: {limit: 10, window: "hour"},

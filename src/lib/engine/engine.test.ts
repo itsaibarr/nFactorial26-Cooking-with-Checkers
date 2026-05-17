@@ -340,6 +340,17 @@ describe("engine", () => {
     expect(moveNotations(state)).toEqual(["c3:a1"])
   })
 
+  it("lets a man choose between a forward capture and a backward capture from the same square", () => {
+    // c5 is forward (NW) for white, e3 is backward (SE) — both must appear
+    const state = createGameState({
+      sideToMove: "white",
+      whiteMen: ["d4"],
+      blackMen: ["c5", "e3"],
+    })
+
+    expect(moveNotations(state)).toEqual(["d4:b6", "d4:f2"])
+  })
+
   describe("single man captures", () => {
     it.each(singleCaptureCases)("$description", ({state, expected}) => {
       expect(moveNotations(state)).toEqual(expected)
@@ -373,6 +384,19 @@ describe("engine", () => {
     expect(moveNotations(state)).toEqual(["c3:f6", "c3:g7", "c3:h8"])
   })
 
+  it("generates all paths for a king multi-capture where only one landing forces a continuation", () => {
+    // King at a1 captures c3 and can land on d4/e5/f6/g7/h8.
+    // From f6 only, e7 lies on a diagonal (NW ray) so the king must continue: a1:f6:d8.
+    // From d4, e5, g7, h8 no second capture is reachable, so those 1-jump landings are valid.
+    const state = createGameState({
+      sideToMove: "white",
+      whiteKings: ["a1"],
+      blackMen: ["c3", "e7"],
+    })
+
+    expect(moveNotations(state)).toEqual(["a1:d4", "a1:e5", "a1:f6:d8", "a1:g7", "a1:h8"])
+  })
+
   describe("capture precedence", () => {
     it.each(mandatoryCaptureCases)("$description", ({state, expected}) => {
       expect(moveNotations(state)).toEqual(expected)
@@ -387,6 +411,19 @@ describe("engine", () => {
     })
 
     expect(moveNotations(state)).toEqual(["b6:d8:g5", "b6:d8:h4"])
+  })
+
+  it("continues a capture sequence after promotion for black", () => {
+    // Symmetric to the white test above. Black man at g3 captures f2 (forward SW),
+    // promotes at e1 (black's rank 1), then continues as a king to capture c3,
+    // landing on a5 or b4.
+    const state = createGameState({
+      sideToMove: "black",
+      blackMen: ["g3"],
+      whiteMen: ["f2", "c3"],
+    })
+
+    expect(moveNotations(state)).toEqual(["g3:e1:a5", "g3:e1:b4"])
   })
 
   it("allows players to choose among legal capture sequences instead of forcing max capture", () => {
@@ -421,6 +458,33 @@ describe("engine", () => {
     expect(state.endReason).toBe("threefold-repetition")
   })
 
+  it("does not declare a draw at the second repetition, only at the third", () => {
+    let state = createGameState({
+      sideToMove: "white",
+      whiteKings: ["b2"],
+      blackKings: ["h6"],
+    })
+
+    const cycle = ["b2-a3", "h6-g5", "a3-b2", "g5-h6"] as const
+
+    // One full cycle returns to the start — that is the 2nd occurrence; still playing
+    for (const notation of cycle) {
+      const move = getLegalMoves(state).find((m) => m.notation === notation)
+      if (!move) throw new Error(`Expected move ${notation} to exist`)
+      state = applyMove(state, move)
+    }
+    expect(state.status).toBe("playing")
+
+    // A second full cycle makes it the 3rd occurrence — draw
+    for (const notation of cycle) {
+      const move = getLegalMoves(state).find((m) => m.notation === notation)
+      if (!move) throw new Error(`Expected move ${notation} to exist`)
+      state = applyMove(state, move)
+    }
+    expect(state.status).toBe("drawn")
+    expect(state.endReason).toBe("threefold-repetition")
+  })
+
   it("tracks the 25 quiet king-move rule as a draw", () => {
     const state = createGameState({
       sideToMove: "white",
@@ -438,6 +502,25 @@ describe("engine", () => {
 
     expect(nextState.status).toBe("drawn")
     expect(nextState.endReason).toBe("25-king-moves")
+  })
+
+  it("resets the king-quiet-move counter when a man makes a quiet move", () => {
+    // A man's quiet move is neither a king move nor a capture, so the counter must go to 0.
+    const state = createGameState({
+      sideToMove: "white",
+      whiteMen: ["c3"],
+      blackKings: ["h8"],
+      kingQuietMoveCount: 10,
+    })
+
+    const move = getLegalMoves(state).find((m) => m.notation === "c3-d4")
+    if (!move) {
+      throw new Error("Expected move c3-d4 to exist")
+    }
+
+    const nextState = applyMove(state, move)
+
+    expect(nextState.kingQuietMoveCount).toBe(0)
   })
 
   it("tracks the 3 kings versus 1 king draw condition", () => {
