@@ -118,7 +118,8 @@
     "hard": "Сильный",
     "hardDescription": "Считает глубже и ошибается редко.",
     "startGame": "Начать партию",
-    "creatingGame": "Создаём партию…"
+    "creatingGame": "Создаём партию…",
+    "back": "← Дашборд"
   },
   "settings": {
     "title": "Настройки",

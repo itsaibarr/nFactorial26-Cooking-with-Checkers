@@ -118,7 +118,8 @@
     "hard": "Hard",
     "hardDescription": "Searches deeper and rarely blunders.",
     "startGame": "Start game",
-    "creatingGame": "Creating game…"
+    "creatingGame": "Creating game…",
+    "back": "← Dashboard"
   },
   "settings": {
     "title": "Settings",
