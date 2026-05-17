@@ -4,6 +4,11 @@ import { PuzzleSolveClient } from "@/components/puzzle/PuzzleSolveClient"
 import { StreakBadge } from "@/components/common/StreakBadge"
 import { Button } from "@/components/ui/button"
 import {
+  DEFAULT_GAMEPLAY_PREFERENCES,
+  mapStoredGameplayPreferences,
+  storedGameplayPreferencesSchema,
+} from "@/lib/game/preferences"
+import {
   Card,
   CardContent,
   CardDescription,
@@ -58,7 +63,9 @@ export default async function PuzzlePage({params}: PageProps) {
       .single(),
     supabase
       .from("profiles")
-      .select("streak_days")
+      .select(
+        "streak_days, language, subscription_tier, show_legal_moves, show_recommended_moves, capture_input_mode, board_theme",
+      )
       .eq("id", user.id)
       .single(),
     supabase
@@ -79,6 +86,16 @@ export default async function PuzzlePage({params}: PageProps) {
 
   const position = puzzle.position as CreateGameStateOptions
   const solutionMoves = puzzle.solution_moves as string[]
+  const language = profile?.language === "en" ? "en" : "ru"
+  const explanation = language === "en" ? puzzle.explanation_en : puzzle.explanation_ru
+  const subscriptionTier =
+    profile?.subscription_tier === "pro" || profile?.subscription_tier === "family"
+      ? profile.subscription_tier
+      : "free"
+  const parsedGameplayPreferences = storedGameplayPreferencesSchema.safeParse(profile)
+  const gameplayPreferences = parsedGameplayPreferences.success
+    ? mapStoredGameplayPreferences(parsedGameplayPreferences.data)
+    : DEFAULT_GAMEPLAY_PREFERENCES
 
   return (
     <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-6 px-6 py-12">
@@ -113,9 +130,11 @@ export default async function PuzzlePage({params}: PageProps) {
             position={position}
             sideToMove={puzzle.side_to_move as PieceColor}
             solutionMoves={solutionMoves}
-            explanationRu={puzzle.explanation_ru}
-            explanationEn={puzzle.explanation_en}
+            explanation={explanation}
             alreadySolved={alreadySolved}
+            language={language}
+            subscriptionTier={subscriptionTier}
+            gameplayPreferences={gameplayPreferences}
           />
         </CardContent>
       </Card>
