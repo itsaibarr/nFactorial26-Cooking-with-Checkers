@@ -61,7 +61,6 @@ export default async function QuotePage() {
           Sharpki
         </Link>
         <nav className="flex items-center gap-3 text-sm text-muted-foreground">
-          <LanguageToggle locale={locale} />
           <Link
             href="/quote"
             className="rounded-full border border-border px-4 py-2 text-foreground transition-colors"
@@ -69,6 +68,7 @@ export default async function QuotePage() {
           >
             {t("quote.navLabel")}
           </Link>
+          <LanguageToggle locale={locale} />
         </nav>
       </header>
 
