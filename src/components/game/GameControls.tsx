@@ -45,6 +45,8 @@ export function GameControls({
   isFinished,
   botStatus,
   saveStatus,
+  canResign,
+  onResign,
 }: {
   playerColor: "white" | "black"
   opponentLevel: "easy" | "medium" | "hard"
@@ -52,6 +54,8 @@ export function GameControls({
   isFinished: boolean
   botStatus: "idle" | "thinking" | "error"
   saveStatus: "idle" | "saving" | "saved" | "error"
+  canResign: boolean
+  onResign: () => void
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -70,6 +74,9 @@ export function GameControls({
       </div>
 
       <div className="flex gap-2">
+        <Button variant="destructive" onClick={onResign} disabled={!canResign}>
+          Сдаться
+        </Button>
         <Button asChild variant="outline">
           <Link href="/play">Новая партия</Link>
         </Button>

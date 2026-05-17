@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/server"
 const saveGameBodySchema = z.object({
   gameId: z.string().uuid(),
   moves: recordedMoveInputListSchema,
+  termination: z.enum(["resignation"]).optional(),
 })
 
 const storedGameSchema = z.object({
@@ -73,11 +74,26 @@ export async function POST(request: Request) {
 
   try {
     const replayed = replayRecordedGame(parsedBody.data.moves)
-    if (replayed.state.status === "playing") {
+    const playerMoveCount = replayed.moves.filter(
+      (move) => move.side === parsedGame.data.player_color,
+    ).length
+    const resigned = parsedBody.data.termination === "resignation"
+
+    if (resigned && playerMoveCount === 0) {
+      return NextResponse.json(
+        {error: "Play at least one move before resigning"},
+        {status: 400},
+      )
+    }
+
+    if (replayed.state.status === "playing" && !resigned) {
       return NextResponse.json({error: "Game is not finished yet"}, {status: 400})
     }
 
-    const playerResult = getPlayerGameResult(replayed.state, parsedGame.data.player_color)
+    const playerResult = resigned
+      ? "loss"
+      : getPlayerGameResult(replayed.state, parsedGame.data.player_color)
+    const endReason = resigned ? "resignation" : replayed.state.endReason
     const sharpness = computeGameSharpness({
       playerColor: parsedGame.data.player_color,
       moves: parsedBody.data.moves,
@@ -119,7 +135,7 @@ export async function POST(request: Request) {
       .update({
         moves: persistedMoves,
         result: playerResult,
-        end_reason: replayed.state.endReason,
+        end_reason: endReason,
         sharpness_score: sharpness.score,
         sharpness_breakdown: persistedBreakdown,
         ended_at: endedAt,
@@ -149,7 +165,7 @@ export async function POST(request: Request) {
       properties: {
         game_id: parsedGame.data.id,
         result: playerResult,
-        end_reason: replayed.state.endReason,
+        end_reason: endReason,
         duration_seconds: durationSeconds,
         moves_count: replayed.moves.length,
         sharpness_score: sharpness.score,
@@ -158,7 +174,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       result: playerResult,
-      endReason: replayed.state.endReason,
+      endReason: endReason,
       endedAt,
       sharpnessScore: sharpness.score,
       sharpnessBreakdown: sharpness.breakdown,

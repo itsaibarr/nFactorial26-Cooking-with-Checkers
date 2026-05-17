@@ -53,6 +53,24 @@ type PendingWorkerRequest = {
   readonly reject: (error: Error) => void
 }
 
+type SessionResult = "win" | "loss" | "draw" | "aborted"
+
+function getSessionResultLabel(result: SessionResult) {
+  if (result === "win") {
+    return "победа"
+  }
+
+  if (result === "loss") {
+    return "поражение"
+  }
+
+  if (result === "aborted") {
+    return "прервана"
+  }
+
+  return "ничья"
+}
+
 export function GameSession({
   gameId,
   startedAt,
@@ -81,6 +99,10 @@ export function GameSession({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [resultDialogDismissed, setResultDialogDismissed] = useState(false)
   const [savedGame, setSavedGame] = useState<PersistedGameSnapshot>(persistedGame)
+  const [forcedResult, setForcedResult] = useState<{
+    readonly result: SessionResult
+    readonly endReason: string
+  } | null>(null)
 
   const workerRef = useRef<Worker | null>(null)
   const pendingRequestsRef = useRef<Map<string, PendingWorkerRequest>>(new Map())
@@ -154,7 +176,14 @@ export function GameSession({
   }, [])
 
   const legalMoves = useMemo(() => getLegalMoves(state), [state])
-  const isFinished = state.status !== "playing"
+  const engineResult =
+    state.status === "playing" ? null : (getPlayerGameResult(state, playerColor) as SessionResult)
+  const sessionResult = forcedResult?.result ?? savedGame.result ?? engineResult
+  const sessionEndReason =
+    forcedResult?.endReason ??
+    savedGame.endReason ??
+    (state.status === "playing" ? null : state.endReason)
+  const isFinished = sessionResult !== null || savedGame.endedAt !== null
   const resultDialogOpen = isFinished && !resultDialogDismissed
   const isPlayerTurn = !isFinished && state.sideToMove === playerColor
   const playerMoves = useMemo(
@@ -172,6 +201,10 @@ export function GameSession({
   const destinationSquares = useMemo(
     () => new Set(selectedMoves.map((move) => move.to)),
     [selectedMoves],
+  )
+  const hasPlayerMove = useMemo(
+    () => recordedMoves.some((move) => move.side === playerColor),
+    [playerColor, recordedMoves],
   )
 
   useEffect(() => {
@@ -241,6 +274,7 @@ export function GameSession({
             notation: move.notation,
             durationMs: move.durationMs,
           })),
+          termination: forcedResult?.endReason === "resignation" ? "resignation" : undefined,
         }),
       })
 
@@ -251,20 +285,25 @@ export function GameSession({
 
       const parsedPayload = persistedGameSnapshotSchema.parse(payload)
       setSavedGame(parsedPayload)
+      setForcedResult(null)
       setSaveStatus("saved")
     } catch (error) {
       saveAttemptedRef.current = false
       setSaveStatus("error")
       setErrorMessage(error instanceof Error ? error.message : "Не удалось сохранить партию")
     }
-  }, [gameId, recordedMoves])
+  }, [forcedResult, gameId, recordedMoves])
 
   useEffect(() => {
-    if (!hydrated || isFinished || !workerRef.current) {
+    if (!hydrated || isFinished) {
       return
     }
 
     if (state.sideToMove === playerColor || botStatus !== "idle") {
+      return
+    }
+
+    if (opponentLevel !== "easy" && !workerRef.current) {
       return
     }
 
@@ -311,8 +350,17 @@ export function GameSession({
     void saveCompletedGame()
   }, [hydrated, isFinished, persistedComplete, saveCompletedGame])
 
-  const playerResult =
-    state.status === "playing" ? null : getPlayerGameResult(state, playerColor)
+  const handleResign = useCallback(() => {
+    if (!hasPlayerMove || !isPlayerTurn || botStatus === "thinking" || saveStatus === "saving") {
+      return
+    }
+
+    setErrorMessage(null)
+    setForcedResult({
+      result: "loss",
+      endReason: "resignation",
+    })
+  }, [botStatus, hasPlayerMove, isPlayerTurn, saveStatus])
 
   const handleSquarePress = (index: number) => {
     if (!isPlayerTurn || botStatus === "thinking" || saveStatus === "saving") {
@@ -351,6 +399,8 @@ export function GameSession({
             isFinished={isFinished}
             botStatus={botStatus}
             saveStatus={saveStatus}
+            canResign={hasPlayerMove && isPlayerTurn && botStatus !== "thinking" && saveStatus !== "saving"}
+            onResign={handleResign}
           />
 
           {errorMessage ? (
@@ -398,8 +448,8 @@ export function GameSession({
             <CardHeader>
               <CardTitle>Статус партии</CardTitle>
               <CardDescription>
-                {playerResult
-                  ? `Результат: ${playerResult === "win" ? "победа" : playerResult === "loss" ? "поражение" : "ничья"}`
+                {sessionResult
+                  ? `Результат: ${getSessionResultLabel(sessionResult)}`
                   : "Следите за очередью хода и списком ходов."}
               </CardDescription>
             </CardHeader>
@@ -427,11 +477,11 @@ export function GameSession({
         open={resultDialogOpen}
         onOpenChange={(open) => setResultDialogDismissed(!open)}
         playerColor={playerColor}
-        state={state}
+        result={sessionResult}
         saveStatus={saveStatus}
         sharpnessScore={savedGame.sharpnessScore}
         sharpnessBreakdown={savedGame.sharpnessBreakdown}
-        endReason={savedGame.endReason}
+        endReason={sessionEndReason}
         onRetrySave={() => {
           if (saveStatus !== "saving") {
             void saveCompletedGame()

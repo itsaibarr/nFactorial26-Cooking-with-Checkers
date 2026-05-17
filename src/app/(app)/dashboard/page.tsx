@@ -81,6 +81,8 @@ export default async function DashboardPage() {
                       ? "Победа"
                       : game.result === "loss"
                         ? "Поражение"
+                        : game.result === "aborted"
+                          ? "Прервана"
                         : "Ничья"}
                   </p>
                   <p className="text-muted-foreground">

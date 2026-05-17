@@ -10,11 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { GameState, PieceColor } from "@/lib/engine/types"
-import { getPlayerGameResult, type PlayerGameResult } from "@/lib/game/session"
+import type { PieceColor } from "@/lib/engine/types"
+import type { PlayerGameResult } from "@/lib/game/session"
 import type { SharpnessBreakdown } from "@/lib/sharpness/compute"
 
-function getHeadline(result: PlayerGameResult) {
+type GameResult = PlayerGameResult | "aborted"
+
+function getHeadline(result: GameResult) {
   if (result === "win") {
     return "Победа"
   }
@@ -23,10 +25,14 @@ function getHeadline(result: PlayerGameResult) {
     return "Поражение"
   }
 
+  if (result === "aborted") {
+    return "Партия прервана"
+  }
+
   return "Ничья"
 }
 
-function getDescription(result: PlayerGameResult, playerColor: PieceColor) {
+function getDescription(result: GameResult, playerColor: PieceColor) {
   if (result === "win") {
     return playerColor === "white"
       ? "Вы довели партию белыми до победы."
@@ -35,6 +41,10 @@ function getDescription(result: PlayerGameResult, playerColor: PieceColor) {
 
   if (result === "loss") {
     return "Партия завершилась не в вашу пользу."
+  }
+
+  if (result === "aborted") {
+    return "Партия остановлена до естественного завершения."
   }
 
   return "Партия закончилась вничью."
@@ -65,6 +75,10 @@ function getReasonLabel(endReason: string | null) {
     return "3 дамки против 1 дамки"
   }
 
+  if (endReason === "resignation") {
+    return "Сдача"
+  }
+
   return endReason
 }
 
@@ -72,7 +86,7 @@ export function GameResultModal({
   open,
   onOpenChange,
   playerColor,
-  state,
+  result,
   saveStatus,
   sharpnessScore,
   sharpnessBreakdown,
@@ -82,18 +96,16 @@ export function GameResultModal({
   open: boolean
   onOpenChange: (open: boolean) => void
   playerColor: PieceColor
-  state: GameState
+  result: GameResult | null
   saveStatus: "idle" | "saving" | "saved" | "error"
   sharpnessScore: number | null
   sharpnessBreakdown: SharpnessBreakdown | null
   endReason: string | null
   onRetrySave: () => void
 }) {
-  if (state.status === "playing") {
+  if (!result) {
     return null
   }
-
-  const result = getPlayerGameResult(state, playerColor)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -106,7 +118,7 @@ export function GameResultModal({
         <div className="space-y-3">
           <div className="rounded-xl border bg-muted/40 p-3">
             <p className="text-sm text-muted-foreground">Причина завершения</p>
-            <p className="font-medium">{getReasonLabel(endReason ?? state.endReason)}</p>
+            <p className="font-medium">{getReasonLabel(endReason)}</p>
           </div>
 
           <div className="rounded-xl border bg-muted/40 p-3">
@@ -143,6 +155,7 @@ export function GameResultModal({
         </div>
 
         <DialogFooter className="gap-2">
+          <Button disabled>Получить AI-разбор</Button>
           {saveStatus === "error" ? (
             <Button onClick={onRetrySave}>Повторить сохранение</Button>
           ) : null}
