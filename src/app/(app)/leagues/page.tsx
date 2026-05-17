@@ -157,7 +157,8 @@ export default async function LeaguesPage() {
 
   const gamesPlayed = userEntry?.games_played ?? 0
   const gamesNeeded = Math.max(0, 3 - gamesPlayed)
-  const avgSharpness = userEntry?.avg_sharpness !== null ? Number(userEntry?.avg_sharpness) : null
+  // != null catches both null (0 games) and undefined (no entry yet)
+  const avgSharpness = userEntry?.avg_sharpness != null ? Number(userEntry.avg_sharpness) : null
 
   // Progress bar: how far from top 20%? Use rank as proxy
   const progressValue =
@@ -183,7 +184,9 @@ export default async function LeaguesPage() {
           </CardTitle>
           <CardDescription>
             {season
-              ? t("leagues.dashboard.seasonDays", { days: daysLeft })
+              ? daysLeft === 0
+                ? t("leagues.seasonEndsToday")
+                : t("leagues.dashboard.seasonDays", { days: daysLeft })
               : t("leagues.seasonEnds")}
           </CardDescription>
         </CardHeader>
@@ -231,7 +234,7 @@ export default async function LeaguesPage() {
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No players yet this week.</p>
+            <p className="text-sm text-muted-foreground">{t("leagues.leaderboard.empty")}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
