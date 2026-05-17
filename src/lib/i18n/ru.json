@@ -297,5 +297,42 @@
     "errorTitle": "Не удалось зачесть решение",
     "saveError": "Не удалось сохранить решение задачи.",
     "dailyLimitError": "Бесплатный дневной лимит задач на сегодня исчерпан."
+  },
+  "leagues": {
+    "title": "Лиги",
+    "yourLeague": "Ваша лига",
+    "rank": "Место {rank} из {total}",
+    "seasonEnds": "Сезон заканчивается в воскресенье",
+    "gamesThisWeek": "Партий на этой неделе: {count}",
+    "avgSharpness": "Средний sharpness: {score}",
+    "qualifyNotice": "Сыграйте ещё {remaining} {remaining, plural, one {партию} few {партии} many {партий} other {партии}}, чтобы войти в зачёт",
+    "tier": {
+      "bronze": "Бронза",
+      "silver": "Серебро",
+      "gold": "Золото",
+      "diamond": "Алмаз"
+    },
+    "result": {
+      "promoted": "Повышен",
+      "relegated": "Понижен",
+      "stayed": "Остался",
+      "inactive": "Неактивен"
+    },
+    "leaderboard": {
+      "title": "Таблица лидеров этой недели",
+      "rank": "#",
+      "player": "Игрок",
+      "games": "Партии",
+      "avgSharpness": "Ср. sharpness"
+    },
+    "history": {
+      "title": "Прошлые сезоны",
+      "empty": "Прошлых сезонов пока нет"
+    },
+    "dashboard": {
+      "seasonDays": "Сезон: осталось {days} дн.",
+      "playMore": "Играйте больше, чтобы попасть в Топ-20%",
+      "viewLeagues": "Лиги →"
+    }
   }
 }

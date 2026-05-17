@@ -236,6 +236,14 @@ export async function POST(request: Request) {
       throw updateProfileError
     }
 
+    // Non-blocking: a league DB glitch must never abort the game save
+    void supabase
+      .rpc('record_league_game', {
+        p_user_id: user.id,
+        p_sharpness_score: sharpness.score,
+      })
+      .then(undefined, () => undefined)
+
     await captureServerEvent({
       distinctId: user.id,
       event: "game_completed",

@@ -109,6 +109,83 @@ export type Database = {
         }
         Relationships: []
       }
+      league_entries: {
+        Row: {
+          avg_sharpness: number | null
+          created_at: string
+          games_played: number
+          id: string
+          league_tier: string
+          promotion_result: string | null
+          season_id: string
+          total_sharpness: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_sharpness?: never
+          created_at?: string
+          games_played?: number
+          id?: string
+          league_tier: string
+          promotion_result?: string | null
+          season_id: string
+          total_sharpness?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_sharpness?: never
+          created_at?: string
+          games_played?: number
+          id?: string
+          league_tier?: string
+          promotion_result?: string | null
+          season_id?: string
+          total_sharpness?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_entries_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "league_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      league_seasons: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          season_number: number
+          settled: boolean
+          settled_at: string | null
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          season_number: number
+          settled?: boolean
+          settled_at?: string | null
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          season_number?: number
+          settled?: boolean
+          settled_at?: string | null
+          start_date?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           accessibility_mode: boolean
@@ -121,6 +198,7 @@ export type Database = {
           id: string
           language: string
           last_activity_date: string | null
+          league_tier: string
           level: string
           show_legal_moves: boolean
           show_recommended_moves: boolean
@@ -143,6 +221,7 @@ export type Database = {
           id: string
           language?: string
           last_activity_date?: string | null
+          league_tier?: string
           level?: string
           show_legal_moves?: boolean
           show_recommended_moves?: boolean
@@ -165,6 +244,7 @@ export type Database = {
           id?: string
           language?: string
           last_activity_date?: string | null
+          league_tier?: string
           level?: string
           show_legal_moves?: boolean
           show_recommended_moves?: boolean
@@ -320,6 +400,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_or_create_current_season: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      record_league_game: {
+        Args: {
+          p_user_id: string
+          p_sharpness_score: number
+        }
+        Returns: undefined
+      }
       reserve_rate_limit_slot: {
         Args: {
           p_action: string
@@ -331,6 +422,12 @@ export type Database = {
           allowed: boolean
           new_count: number
         }[]
+      }
+      settle_league_season: {
+        Args: {
+          p_season_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

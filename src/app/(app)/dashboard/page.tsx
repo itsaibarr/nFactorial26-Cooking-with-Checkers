@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { DashboardActivityHeatmap } from "@/components/common/DashboardActivityHeatmap"
 import { DashboardUpgradeToast } from "@/components/common/DashboardUpgradeToast"
 import { DashboardAnalytics } from "@/components/common/DashboardAnalytics"
+import { LeagueBadge, type LeagueTier } from "@/components/common/LeagueBadge"
 import { PortalManageButton } from "@/components/common/PortalManageButton"
 import { SharpnessGauge } from "@/components/common/SharpnessGauge"
 import { SignOutButton } from "@/components/common/SignOutButton"
@@ -75,6 +76,17 @@ function getOpponentLevelLabel(level: string, locale: AppLocale) {
   }
 }
 
+function getLeagueTierLabel(tier: string, locale: AppLocale) {
+  const {t} = getAppTranslator(locale)
+  const labels: Record<string, string> = {
+    bronze: t("leagues.tier.bronze"),
+    silver: t("leagues.tier.silver"),
+    gold: t("leagues.tier.gold"),
+    diamond: t("leagues.tier.diamond"),
+  }
+  return labels[tier] ?? tier
+}
+
 function renderSubscriptionBadge(tier: SubscriptionTier, locale: AppLocale) {
   const {t} = getAppTranslator(locale)
   const key = tier === "family" ? "family" : tier === "pro" ? "pro" : "free"
@@ -111,7 +123,7 @@ export default async function DashboardPage() {
     await Promise.all([
       supabase
         .from("profiles")
-        .select("id, display_name, current_sharpness, streak_days, language, subscription_tier, stripe_customer_id")
+        .select("id, display_name, current_sharpness, streak_days, language, subscription_tier, stripe_customer_id, league_tier")
         .eq("id", user.id)
         .single(),
       supabase
@@ -166,6 +178,7 @@ export default async function DashboardPage() {
             <Link href="/settings">{t("dashboard.settings")}</Link>
           </Button>
           {renderStreakBadge(profile?.streak_days ?? 0, locale)}
+          <LeagueBadge tier={(profile?.league_tier ?? "bronze") as LeagueTier} size="sm" labelOverride={getLeagueTierLabel(profile?.league_tier ?? "bronze", locale)} />
           <SignOutButton label={t("dashboard.signOut")} />
         </div>
       </header>
@@ -222,6 +235,19 @@ export default async function DashboardPage() {
       ) : null}
 
       <DashboardActivityHeatmap data={activityHeatmap} locale={locale} />
+
+      {/* Mini league card */}
+      <Card>
+        <CardContent className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <LeagueBadge tier={(profile?.league_tier ?? "bronze") as LeagueTier} size="sm" labelOverride={getLeagueTierLabel(profile?.league_tier ?? "bronze", locale)} />
+            <p className="text-sm text-muted-foreground">{t("leagues.dashboard.playMore")}</p>
+          </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/leagues">{t("leagues.dashboard.viewLeagues")}</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

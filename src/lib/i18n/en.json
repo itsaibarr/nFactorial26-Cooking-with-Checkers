@@ -297,5 +297,42 @@
     "errorTitle": "Could not record solution",
     "saveError": "Could not save the puzzle solution.",
     "dailyLimitError": "Today's free daily puzzle limit is used up."
+  },
+  "leagues": {
+    "title": "Leagues",
+    "yourLeague": "Your League",
+    "rank": "Rank {rank} of {total}",
+    "seasonEnds": "Season ends Sunday",
+    "gamesThisWeek": "Games this week: {count}",
+    "avgSharpness": "Avg sharpness: {score}",
+    "qualifyNotice": "Play {remaining} more game(s) to qualify for promotion",
+    "tier": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "diamond": "Diamond"
+    },
+    "result": {
+      "promoted": "Promoted",
+      "relegated": "Relegated",
+      "stayed": "Stayed",
+      "inactive": "Inactive"
+    },
+    "leaderboard": {
+      "title": "This Week's Leaderboard",
+      "rank": "#",
+      "player": "Player",
+      "games": "Games",
+      "avgSharpness": "Avg Sharpness"
+    },
+    "history": {
+      "title": "Past Seasons",
+      "empty": "No past seasons yet"
+    },
+    "dashboard": {
+      "seasonDays": "Season: {days} days left",
+      "playMore": "Play more to reach the Top 20%",
+      "viewLeagues": "Leagues →"
+    }
   }
 }
