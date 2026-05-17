@@ -35,19 +35,23 @@ function clampScore(score: number) {
 
 function getMistakePenalty(evalLoss: number) {
   if (evalLoss >= 400) {
-    return 3.5
+    return 4
   }
 
   if (evalLoss >= 250) {
-    return 2.5
+    return 3
   }
 
   if (evalLoss >= 150) {
-    return 1.5
+    return 2
   }
 
   if (evalLoss >= 75) {
-    return 0.5
+    return 1
+  }
+
+  if (evalLoss >= 40) {
+    return 0.35
   }
 
   return 0
@@ -58,7 +62,11 @@ function getMoveAccuracyScore(evalLoss: number) {
     return 100
   }
 
-  return clampScore(Math.round(100 - evalLoss / 1.8))
+  if (evalLoss <= 40) {
+    return clampScore(Math.round(100 - evalLoss / 2))
+  }
+
+  return clampScore(Math.round(80 - (evalLoss - 40) / 1.25))
 }
 
 function average(values: readonly number[]) {
@@ -125,6 +133,26 @@ function rankMoves(state: ReturnType<typeof newGame>) {
     .sort((left, right) => right.score - left.score)
 }
 
+function applyBlunderScoreCap(score: number, blunders: number) {
+  if (blunders >= 4) {
+    return Math.min(score, 38)
+  }
+
+  if (blunders >= 3) {
+    return Math.min(score, 48)
+  }
+
+  if (blunders >= 2) {
+    return Math.min(score, 58)
+  }
+
+  if (blunders >= 1) {
+    return Math.min(score, 68)
+  }
+
+  return score
+}
+
 export function computeGameSharpness({
   playerColor,
   moves,
@@ -187,7 +215,10 @@ export function computeGameSharpness({
     playerMoves === 0
       ? 100
       : clampScore(Math.round(100 - (mistakePenaltyTotal / playerMoves) * 100))
-  const score = clampScore(Math.round(accuracy * 0.6 + speed * 0.1 + blunderRate * 0.3))
+  const score = applyBlunderScoreCap(
+    clampScore(Math.round(accuracy * 0.55 + speed * 0.05 + blunderRate * 0.4)),
+    blunders,
+  )
   const averageMoveTimeMs = average(playerDurations)
 
   return {
