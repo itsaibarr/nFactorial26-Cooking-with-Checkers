@@ -63,5 +63,8 @@ describe("buildCoachPrompts", () => {
     expect(userPrompt).toContain("Accessibility mode: on.")
     expect(userPrompt).toContain('"blunderRate": 82')
     expect(userPrompt).toContain('"move_number": 1')
+    expect(userPrompt).toContain("Only use move numbers from the supplied critical moments when they are available.")
+    expect(userPrompt).toContain("Do not repeat the same move_number twice.")
+    expect(userPrompt).toContain("Mention the played notation and the engine suggestion when one is provided.")
   })
 })

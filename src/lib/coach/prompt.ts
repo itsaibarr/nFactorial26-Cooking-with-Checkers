@@ -78,6 +78,9 @@ Rules for your response:
 - Every highlight.move_number must be one of these player move numbers: ${allowedMoveNumbers.join(", ")}.
 - Refer to the actual move numbers from this game, not generic advice.
 - Base every highlight on the supplied move list and critical moments.
+- Only use move numbers from the supplied critical moments when they are available.
+- Do not repeat the same move_number twice.
+- Mention the played notation and the engine suggestion when one is provided.
 - If accessibility mode is on, use short sentences and very plain wording.
 - If a goal is provided, tailor the key lesson to that goal.`
 }

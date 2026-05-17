@@ -216,16 +216,38 @@ export function buildEngineFallbackAnalysis(context: CoachGameContext): CoachAna
   }
 }
 
-function sanitizeCoachAnalysis(
+export function sanitizeCoachAnalysis(
   rawAnalysis: CoachAnalysis,
   context: CoachGameContext,
 ) {
   const playerMoveCount = context.moves.filter(
     (move) => move.side === context.playerColor,
   ).length
+  const allowedCriticalMoveNumbers = new Set(
+    context.criticalMoments.map((moment) => moment.move_number),
+  )
+  const seenMoveNumbers = new Set<number>()
 
   const highlights = rawAnalysis.highlights.filter(
-    (highlight) => highlight.move_number >= 1 && highlight.move_number <= playerMoveCount,
+    (highlight) => {
+      if (highlight.move_number < 1 || highlight.move_number > playerMoveCount) {
+        return false
+      }
+
+      if (
+        allowedCriticalMoveNumbers.size > 0 &&
+        !allowedCriticalMoveNumbers.has(highlight.move_number)
+      ) {
+        return false
+      }
+
+      if (seenMoveNumbers.has(highlight.move_number)) {
+        return false
+      }
+
+      seenMoveNumbers.add(highlight.move_number)
+      return true
+    },
   )
 
   if (highlights.length === 0) {
