@@ -109,55 +109,60 @@ export function DashboardActivityHeatmap({
           })}
         </p>
         <div ref={containerRef} className="relative">
-          <div className="flex gap-1.5" aria-hidden="true">
-            <div className="pt-5 shrink-0">
-              <div className="flex flex-col gap-[2px]">
-                {getDayLabels(locale).map((label, index) => (
+          <div
+            className="grid w-full"
+            style={{
+              gridTemplateColumns: `max-content repeat(${data.weeks.length}, minmax(0, 1fr))`,
+              gridTemplateRows: `14px repeat(7, 13px)`,
+              columnGap: "2px",
+              rowGap: "2px",
+            }}
+            aria-hidden="true"
+          >
+            {/* corner */}
+            <div />
+
+            {/* month labels */}
+            {data.weeks.map((week) => (
+              <div key={`month-${week.days[0]?.date ?? "empty"}`} className="relative overflow-visible">
+                {week.monthLabelDate ? (
+                  <span className="absolute left-0 top-0 whitespace-nowrap text-[9px] leading-none text-muted-foreground">
+                    {formatMonthLabel(locale, week.monthLabelDate)}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+
+            {/* 7 day rows: label + cells */}
+            {getDayLabels(locale).flatMap((label, dayIndex) => [
+              <div
+                key={`dl-${dayIndex}`}
+                className="flex items-center justify-end pr-1.5 text-[9px] leading-none text-muted-foreground"
+              >
+                {label}
+              </div>,
+              ...data.weeks.map((week) => {
+                const day = week.days[dayIndex]
+                if (!day) return <div key={`empty-${dayIndex}-${week.days[0]?.date ?? dayIndex}`} />
+                return (
                   <div
-                    key={`day-label-${index}`}
-                    className="flex h-[9px] items-center text-[9px] leading-none text-muted-foreground"
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex-1 min-w-0 space-y-[2px]">
-              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 10px)`, gap: "2px"}}>
-                {data.weeks.map((week) => (
-                  <div key={`month-${week.days[0]?.date ?? "empty"}`} className="relative h-[14px]">
-                    {week.monthLabelDate ? (
-                      <span className="absolute left-0 top-0 whitespace-nowrap text-[9px] leading-none text-muted-foreground">
-                        {formatMonthLabel(locale, week.monthLabelDate)}
-                      </span>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-              <div className="grid" style={{gridTemplateColumns: `repeat(${data.weeks.length}, 10px)`, gap: "2px"}}>
-                {data.weeks.map((week) => (
-                  <div key={`week-${week.days[0]?.date ?? "empty"}`} className="flex flex-col gap-[2px]">
-                    {week.days.map((day) => (
-                      <div
-                        key={day.date}
-                        onMouseEnter={(e) => handleCellEnter(day, e.currentTarget)}
-                        onMouseLeave={handleCellLeave}
-                        className={cn(
-                          "aspect-square w-full rounded-[2px] border transition-colors",
-                          !day.inRange && "border-transparent bg-transparent",
-                          day.inRange && day.level === 0 && "border-border/60 bg-muted/70 dark:border-border/50 dark:bg-muted/40",
-                          day.inRange && day.level === 1 && "border-amber-200 bg-amber-100 dark:border-amber-900/80 dark:bg-amber-950/60",
-                          day.inRange && day.level === 2 && "border-amber-300 bg-amber-200 dark:border-amber-800 dark:bg-amber-900/80",
-                          day.inRange && day.level === 3 && "border-amber-400 bg-amber-400 dark:border-amber-700 dark:bg-amber-700",
-                          day.inRange && day.level === 4 && "border-amber-600 bg-amber-600 dark:border-amber-500 dark:bg-amber-500",
-                          day.inRange && day.level > 0 && "hover:ring-1 hover:ring-amber-400/60 hover:ring-offset-1",
-                        )}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
+                    key={day.date}
+                    onMouseEnter={(e) => handleCellEnter(day, e.currentTarget)}
+                    onMouseLeave={handleCellLeave}
+                    className={cn(
+                      "rounded-[2px] border transition-colors",
+                      !day.inRange && "border-transparent bg-transparent",
+                      day.inRange && day.level === 0 && "border-border/60 bg-muted/70 dark:border-border/50 dark:bg-muted/40",
+                      day.inRange && day.level === 1 && "border-amber-200 bg-amber-100 dark:border-amber-900/80 dark:bg-amber-950/60",
+                      day.inRange && day.level === 2 && "border-amber-300 bg-amber-200 dark:border-amber-800 dark:bg-amber-900/80",
+                      day.inRange && day.level === 3 && "border-amber-400 bg-amber-400 dark:border-amber-700 dark:bg-amber-700",
+                      day.inRange && day.level === 4 && "border-amber-600 bg-amber-600 dark:border-amber-500 dark:bg-amber-500",
+                      day.inRange && day.level > 0 && "hover:ring-1 hover:ring-amber-400/60 hover:ring-offset-1",
+                    )}
+                  />
+                )
+              }),
+            ])}
           </div>
           {tooltip ? (
             <div
