@@ -86,8 +86,6 @@
     "description": "The paid tier removes limits on AI reviews and keeps your daily training going without interruptions.",
     "backToDashboard": "← Dashboard",
     "backToHome": "← Home",
-    "langToggle": "RU",
-    "langToggleAria": "Switch to Russian",
     "canceledNotice": "Checkout was closed before payment. You can come back to plan selection any time.",
     "alreadyActiveTitle": "Subscription is already active",
     "alreadyActiveStatus": "Current status: {status}.",
@@ -95,7 +93,6 @@
     "signInDescription": "Stripe Checkout only works for logged-in users so we can link the subscription to your profile right away.",
     "comingSoon": "Coming soon",
     "subscribe": "Subscribe",
-    "addPriceId": "Add price ID",
     "benefit1": "• AI reviews with no daily cap",
     "benefit2": "• Subscription activates right after payment",
     "benefit3": "• Cancel any time"

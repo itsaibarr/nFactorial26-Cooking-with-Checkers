@@ -8,16 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { LanguageToggle } from "@/components/common/LanguageToggle"
 import { PricingAnalytics } from "@/components/common/PricingAnalytics"
 import { PricingCheckoutButton } from "@/components/common/PricingCheckoutButton"
 import { PortalManageButton } from "@/components/common/PortalManageButton"
 import { SignInButton } from "@/components/common/SignInButton"
 import { StripeScript } from "@/components/common/StripeScript"
-import {
-  isStripePlanConfigured,
-  pricingPlans,
-} from "@/lib/stripe/products"
+import { pricingPlans } from "@/lib/stripe/products"
 import { createClient } from "@/lib/supabase/server"
 import { getAppTranslator } from "@/lib/i18n"
 import { resolveLocaleFromCookie } from "@/lib/i18n/server"
@@ -61,12 +57,9 @@ export default async function PricingPage({
               {t("pricing.description")}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <LanguageToggle locale={locale} label={t("pricing.langToggle")} ariaLabel={t("pricing.langToggleAria")} />
-            <Button asChild variant="ghost">
-              <Link href={user ? "/dashboard" : "/"}>{user ? t("pricing.backToDashboard") : t("pricing.backToHome")}</Link>
-            </Button>
-          </div>
+          <Button asChild variant="ghost">
+            <Link href={user ? "/dashboard" : "/"}>{user ? t("pricing.backToDashboard") : t("pricing.backToHome")}</Link>
+          </Button>
         </div>
 
         {canceled === "true" ? (
@@ -108,9 +101,6 @@ export default async function PricingPage({
 
       <section className="grid gap-6 md:grid-cols-3">
         {pricingPlans.map((planItem) => {
-          const checkoutReady =
-            planItem.plan === "family" ? false : isStripePlanConfigured(planItem.plan)
-
           return (
             <Card
               key={planItem.plan}
@@ -145,10 +135,9 @@ export default async function PricingPage({
                   <PricingCheckoutButton
                     plan={planItem.plan}
                     className="w-full"
-                    disabled={!checkoutReady}
                     variant={planItem.plan === "yearly" ? "outline" : "default"}
                   >
-                    {checkoutReady ? t("pricing.subscribe") : t("pricing.addPriceId")}
+                    {t("pricing.subscribe")}
                   </PricingCheckoutButton>
                 )}
 
