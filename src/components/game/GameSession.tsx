@@ -474,6 +474,7 @@ export function GameSession({
       </div>
 
       <GameResultModal
+        gameId={gameId}
         open={resultDialogOpen}
         onOpenChange={(open) => setResultDialogDismissed(!open)}
         playerColor={playerColor}

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { DashboardAnalytics } from "@/components/common/DashboardAnalytics"
 import { SharpnessGauge } from "@/components/common/SharpnessGauge"
 import { SignOutButton } from "@/components/common/SignOutButton"
+import { StreakBadge } from "@/components/common/StreakBadge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -39,7 +40,10 @@ export default async function DashboardPage() {
 
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Sharpki</h1>
-        <SignOutButton />
+        <div className="flex items-center gap-2">
+          <StreakBadge days={profile?.streak_days ?? 0} />
+          <SignOutButton />
+        </div>
       </header>
 
       <Card>
@@ -50,53 +54,59 @@ export default async function DashboardPage() {
         <CardContent className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
           <div className="space-y-4">
             <SharpnessGauge value={profile?.current_sharpness ?? 50} />
-            <div className="text-sm text-muted-foreground">
-              <p>Текущая серия: {profile?.streak_days ?? 0} дней</p>
-              <p className="font-mono text-xs">{user.id}</p>
-            </div>
           </div>
-          <Button asChild size="lg">
-            <Link href="/play">Играть с ботом</Link>
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
+            <Button asChild size="lg">
+              <Link href="/play">Играть с ботом</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/puzzles">Задача дня</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Последние партии</CardTitle>
-          <CardDescription>
-            Завершённые игры сохраняются через серверную проверку ходов.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle>Последние партии</CardTitle>
+            <CardDescription className="mt-1">
+              Завершённые игры сохраняются через серверную проверку ходов.
+            </CardDescription>
+          </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/history">Все партии →</Link>
+          </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           {recentGames?.length ? (
             recentGames.map((game) => (
-              <div
-                key={game.id}
-                className="flex items-center justify-between rounded-xl border p-3 text-sm"
-              >
-                <div>
+              <Link key={game.id} href={`/analysis/${game.id}`} className="block">
+                <div className="flex items-center justify-between rounded-xl border p-3 text-sm transition-colors hover:bg-muted/50">
+                  <div>
+                    <p className="font-medium">
+                      {game.result === "win"
+                        ? "Победа"
+                        : game.result === "loss"
+                          ? "Поражение"
+                          : game.result === "aborted"
+                            ? "Прервана"
+                            : "Ничья"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Бот: {game.opponent_level} ·{" "}
+                      {new Date(game.created_at).toLocaleString("ru-RU")}
+                    </p>
+                  </div>
                   <p className="font-medium">
-                    {game.result === "win"
-                      ? "Победа"
-                      : game.result === "loss"
-                        ? "Поражение"
-                        : game.result === "aborted"
-                          ? "Прервана"
-                        : "Ничья"}
-                  </p>
-                  <p className="text-muted-foreground">
-                    Бот: {game.opponent_level} · {new Date(game.created_at).toLocaleString("ru-RU")}
+                    {game.sharpness_score === null ? "—" : `${game.sharpness_score}/100`}
                   </p>
                 </div>
-                <p className="font-medium">
-                  {game.sharpness_score === null ? "—" : `${game.sharpness_score}/100`}
-                </p>
-              </div>
+              </Link>
             ))
           ) : (
             <p className="text-sm text-muted-foreground">
-              Пока нет завершённых партий. Начните первую игру с движком.
+              Пока нет завершённых партий. Начните первую игру с ботом.
             </p>
           )}
         </CardContent>

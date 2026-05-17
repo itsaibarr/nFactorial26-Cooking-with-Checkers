@@ -7,6 +7,7 @@ import {
   sharpnessBreakdownSchema,
   updateSharpnessEma,
 } from "@/lib/sharpness/compute"
+import { advanceStreak, getTodayDateString } from "@/lib/streak/advance"
 import type { Json } from "@/lib/supabase/database.types"
 import { createClient } from "@/lib/supabase/server"
 
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
 
     const {data: profile, error: profileError} = await supabase
       .from("profiles")
-      .select("current_sharpness")
+      .select("current_sharpness, streak_days, last_activity_date")
       .eq("id", user.id)
       .single()
 
@@ -110,6 +111,12 @@ export async function POST(request: Request) {
     }
 
     const nextSharpness = updateSharpnessEma(profile.current_sharpness, sharpness.score)
+    const today = getTodayDateString()
+    const streakResult = advanceStreak({
+      currentStreakDays: profile.streak_days,
+      lastActivityDate: profile.last_activity_date,
+      today,
+    })
     const endedAt = new Date().toISOString()
     const startedAtMs = Date.parse(parsedGame.data.started_at)
     const durationSeconds = Number.isNaN(startedAtMs)
@@ -150,9 +157,15 @@ export async function POST(request: Request) {
 
     const {error: updateProfileError} = await supabase
       .from("profiles")
-      .update({
-        current_sharpness: nextSharpness,
-      })
+      .update(
+        streakResult.changed
+          ? {
+              current_sharpness: nextSharpness,
+              streak_days: streakResult.newStreakDays,
+              last_activity_date: streakResult.newLastActivityDate,
+            }
+          : {current_sharpness: nextSharpness},
+      )
       .eq("id", user.id)
 
     if (updateProfileError) {
@@ -179,6 +192,7 @@ export async function POST(request: Request) {
       sharpnessScore: sharpness.score,
       sharpnessBreakdown: sharpness.breakdown,
       currentSharpness: nextSharpness,
+      streakDays: streakResult.newStreakDays,
     })
   } catch (error) {
     await captureServerException(error, user.id, {

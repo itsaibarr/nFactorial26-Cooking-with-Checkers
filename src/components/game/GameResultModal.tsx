@@ -83,6 +83,7 @@ function getReasonLabel(endReason: string | null) {
 }
 
 export function GameResultModal({
+  gameId,
   open,
   onOpenChange,
   playerColor,
@@ -93,6 +94,7 @@ export function GameResultModal({
   endReason,
   onRetrySave,
 }: {
+  gameId: string
   open: boolean
   onOpenChange: (open: boolean) => void
   playerColor: PieceColor
@@ -109,7 +111,7 @@ export function GameResultModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="overflow-hidden">
         <DialogHeader>
           <DialogTitle>{getHeadline(result)}</DialogTitle>
           <DialogDescription>{getDescription(result, playerColor)}</DialogDescription>
@@ -155,7 +157,13 @@ export function GameResultModal({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button disabled>Получить AI-разбор</Button>
+          {saveStatus === "saved" ? (
+            <Button asChild>
+              <Link href={`/analysis/${gameId}`}>Получить AI-разбор</Link>
+            </Button>
+          ) : (
+            <Button disabled>Получить AI-разбор</Button>
+          )}
           {saveStatus === "error" ? (
             <Button onClick={onRetrySave}>Повторить сохранение</Button>
           ) : null}
