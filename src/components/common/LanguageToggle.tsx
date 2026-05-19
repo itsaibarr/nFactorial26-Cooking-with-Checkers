@@ -28,7 +28,7 @@ export function LanguageToggle({
     <button
       onClick={toggle}
       disabled={pending}
-      className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+      className="min-h-[40px] rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
       aria-label={ariaLabel ?? (locale === "ru" ? "Switch to English" : "Переключить на русский")}
     >
       {label ?? (locale === "ru" ? "EN" : "RU")}

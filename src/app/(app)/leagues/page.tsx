@@ -167,10 +167,10 @@ export default async function LeaguesPage() {
       : 0
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">{t("leagues.title")}</h1>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
           <Link href="/dashboard">← Dashboard</Link>
         </Button>
       </header>

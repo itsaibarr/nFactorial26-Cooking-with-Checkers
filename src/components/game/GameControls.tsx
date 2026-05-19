@@ -74,14 +74,14 @@ export function GameControls({
         {saveStatus === "rate_limited" ? <Badge variant="destructive">Лимит</Badge> : null}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button variant="destructive" onClick={onResign} disabled={!canResign}>
           Сдаться
         </Button>
         <Button asChild variant="outline">
           <Link href="/play">Новая партия</Link>
         </Button>
-        <Button asChild variant="ghost">
+        <Button asChild variant="ghost" className="hidden sm:inline-flex">
           <Link href="/dashboard">К дашборду</Link>
         </Button>
       </div>

@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { indexToSquare } from "@/lib/engine/board"
 import { getLegalMoves } from "@/lib/engine/engine"
 import type { DifficultyLevel, GameState, Move, PieceColor } from "@/lib/engine/types"
@@ -787,7 +788,8 @@ export function GameSession({
           ) : null}
         </section>
 
-        <aside className="space-y-4">
+        {/* Desktop: stacked aside */}
+        <aside className="hidden space-y-4 lg:block">
           <Card>
             <CardHeader>
               <CardTitle>Статус партии</CardTitle>
@@ -815,6 +817,42 @@ export function GameSession({
 
           <MoveList moves={recordedMoves} />
         </aside>
+
+        {/* Mobile: tabbed panel below the board */}
+        <div className="lg:hidden">
+          <Tabs defaultValue="moves">
+            <TabsList className="w-full">
+              <TabsTrigger value="moves" className="flex-1">Ходы</TabsTrigger>
+              <TabsTrigger value="status" className="flex-1">Статус</TabsTrigger>
+            </TabsList>
+            <TabsContent value="moves" className="mt-2">
+              <MoveList moves={recordedMoves} />
+            </TabsContent>
+            <TabsContent value="status" className="mt-2">
+              <Card>
+                <CardContent className="space-y-3 pt-4 text-sm">
+                  {sessionResult ? (
+                    <p className="font-medium">Результат: {getSessionResultLabel(sessionResult)}</p>
+                  ) : (
+                    <p className="text-muted-foreground">Следите за очередью хода и списком ходов.</p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Ходов сыграно</span>
+                    <span className="font-medium">{recordedMoves.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Сторона игрока</span>
+                    <span className="font-medium">{playerColor === "white" ? "Белые" : "Чёрные"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Идентификатор</span>
+                    <span className="font-mono text-xs">{gameId.slice(0, 8)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
 
       <GameResultModal

@@ -166,19 +166,21 @@ export default async function DashboardPage() {
   })
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12">
       <DashboardAnalytics />
       <DashboardUpgradeToast locale={locale} />
 
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Sharpki</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           {renderSubscriptionBadge(subscriptionTier, locale)}
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
             <Link href="/settings">{t("dashboard.settings")}</Link>
           </Button>
           {renderStreakBadge(profile?.streak_days ?? 0, locale)}
-          <LeagueBadge tier={(profile?.league_tier ?? "bronze") as LeagueTier} size="sm" labelOverride={getLeagueTierLabel(profile?.league_tier ?? "bronze", locale)} />
+          <span className="hidden sm:inline-flex">
+            <LeagueBadge tier={(profile?.league_tier ?? "bronze") as LeagueTier} size="sm" labelOverride={getLeagueTierLabel(profile?.league_tier ?? "bronze", locale)} />
+          </span>
           <SignOutButton label={t("dashboard.signOut")} />
         </div>
       </header>
@@ -265,7 +267,7 @@ export default async function DashboardPage() {
           {recentGames?.length ? (
             recentGames.map((game) => (
               <Link key={game.id} href={`/analysis/${game.id}`} className="block">
-                <div className="flex items-center justify-between rounded-xl border p-3 text-sm transition-colors hover:bg-muted/50">
+                <div className="flex min-h-[52px] items-center justify-between rounded-xl border p-3 text-sm transition-colors hover:bg-muted/50">
                   <div>
                     <p className="font-medium">{getRecentGameResultLabel(game.result, locale)}</p>
                     <p className="text-muted-foreground">

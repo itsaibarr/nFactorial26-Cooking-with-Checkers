@@ -68,13 +68,13 @@ export default async function HistoryPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t("history.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("history.description")}</p>
         </div>
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
           <Link href="/dashboard">{t("history.back")}</Link>
         </Button>
       </header>
@@ -111,7 +111,7 @@ export default async function HistoryPage() {
 
               return (
                 <Link key={game.id} href={`/analysis/${game.id}`} className="block">
-                  <div className="flex items-center justify-between rounded-xl border p-3 text-sm transition-colors hover:bg-muted/50">
+                  <div className="flex min-h-[52px] items-center justify-between rounded-xl border p-3 text-sm transition-colors hover:bg-muted/50">
                     <div className="flex items-center gap-3">
                       <Badge variant={variant} className="w-24 justify-center">
                         {label}

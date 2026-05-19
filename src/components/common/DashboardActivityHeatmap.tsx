@@ -108,7 +108,8 @@ export function DashboardActivityHeatmap({
             activeDays: data.activeDays,
           })}
         </p>
-        <div ref={containerRef} className="relative">
+        <div className="overflow-x-auto">
+        <div ref={containerRef} className="relative min-w-[560px]">
           <div
             className="grid w-full"
             style={{
@@ -177,6 +178,7 @@ export function DashboardActivityHeatmap({
               <p className="text-muted-foreground">{formatDayCounts(tooltip.day, t)}</p>
             </div>
           ) : null}
+        </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>{t("dashboard.activityHeatmap.legendDescription")}</p>

@@ -95,21 +95,21 @@ export default async function SettingsPage({
     : DEFAULT_GAMEPLAY_PREFERENCES
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12">
       <StripeScript />
-      <header className="flex items-center justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">{t("settings.title")}</h1>
-          <p className="text-muted-foreground">
-            {t("settings.description")}
-          </p>
+      <header className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("settings.title")}</h1>
+          <div className="flex items-center gap-2">
+            <LanguageToggle locale={locale} label={t("settings.langToggle")} ariaLabel={t("settings.langToggleAria")} />
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+              <Link href="/dashboard">{t("settings.backToDashboard")}</Link>
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <LanguageToggle locale={locale} label={t("settings.langToggle")} ariaLabel={t("settings.langToggleAria")} />
-          <Button asChild variant="ghost">
-            <Link href="/dashboard">{t("settings.backToDashboard")}</Link>
-          </Button>
-        </div>
+        <p className="text-sm text-muted-foreground sm:text-base">
+          {t("settings.description")}
+        </p>
       </header>
 
       {portal === "returned" ? (

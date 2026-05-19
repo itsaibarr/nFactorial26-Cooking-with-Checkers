@@ -90,10 +90,10 @@ export default async function PlayGamePage({
     : DEFAULT_GAMEPLAY_PREFERENCES
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{t("gameSession.title")}</h1>
-        <p className="text-muted-foreground">
+    <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 sm:py-8 md:gap-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("gameSession.title")}</h1>
+        <p className="hidden text-muted-foreground sm:block">
           {t("gameSession.description")}
         </p>
       </header>

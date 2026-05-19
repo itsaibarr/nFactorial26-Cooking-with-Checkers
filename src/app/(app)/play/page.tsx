@@ -71,13 +71,13 @@ export default async function PlayLobbyPage({
     null
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12">
       <header className="space-y-2">
-        <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/dashboard" className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline">
           {t("play.back")}
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">{t("play.title")}</h1>
-        <p className="max-w-2xl text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("play.title")}</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
           {t("play.description")}
         </p>
       </header>
